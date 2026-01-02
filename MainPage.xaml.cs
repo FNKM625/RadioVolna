@@ -106,7 +106,7 @@ public partial class MainPage : ContentPage
     {
         if (e.CurrentSelection.FirstOrDefault() is Station selectedStation)
         {
-            _audioService.Play(selectedStation.Url);
+            _audioService.Play(selectedStation.Url, selectedStation.DisplayName);
             CurrentStationLabel.Text = selectedStation.DisplayName;
             StationSelectionOverlay.IsVisible = false;
             StationsList.SelectedItem = null;
