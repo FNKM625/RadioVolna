@@ -1,4 +1,6 @@
-﻿using System.Collections.ObjectModel;
+﻿#pragma warning disable CS0168
+
+using System.Collections.ObjectModel;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 

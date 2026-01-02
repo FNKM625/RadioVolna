@@ -1,4 +1,6 @@
-﻿using Android.Media;
+﻿#pragma warning disable CA1416, CA1422, CS8618, CS8602, CS8600, CS0168
+
+using Android.Media;
 using Android.Content;
 using Android.OS;
 using Android.App;
