@@ -2,7 +2,7 @@
 
 public interface IAudioService
 {
-    void Play(string url);
+    void Play(string url, string stationName);
     void Pause();
     void Resume();
     void Stop();

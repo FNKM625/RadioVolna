@@ -56,6 +56,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <AndroidResource Remove="Platforms\Android\Resources\drawable\radio_logo.png" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Remove="Platforms\Android\Resources\drawable\radio_logo.png" />
 	  <None Remove="Resources\AppIcon\appicon.png" />
 	  <None Remove="Resources\Images\logo_radio_volna.png" />
 	  <None Remove="Resources\Splash\splash_logo.png" />
@@ -65,6 +70,10 @@
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <MauiImage Include="Platforms\Android\Resources\drawable\radio_logo.png" />
 	</ItemGroup>
 
 </Project>

@@ -3,7 +3,6 @@ using Android.Content;
 using Android.OS;
 using Android.App;
 using Android.Graphics;
-// Dodane dla obsługi sesji i powiadomień
 using Android.Media.Session;
 using Android.Graphics.Drawables;
 
@@ -12,19 +11,18 @@ namespace RadioVolna;
 public class AudioService : IAudioService
 {
     private MediaPlayer? _player;
-
-    // --- NOWE ZMIENNE DLA POWIADOMIEŃ ---
     private MediaSession? _mediaSession;
     private NotificationManager? _notificationManager;
     private Context _context;
     private NotificationReceiver? _receiver;
+
+    private string _currentStationName = "Radio Volna";
 
     private const int NotificationId = 1001;
     private const string ChannelId = "radio_volna_channel";
     private const string ActionPlay = "com.radiovolna.ACTION_PLAY";
     private const string ActionPause = "com.radiovolna.ACTION_PAUSE";
     private const string ActionStop = "com.radiovolna.ACTION_STOP";
-    // -------------------------------------
 
     public event EventHandler<bool>? IsPlayingChanged;
     public event EventHandler<string>? StatusChanged;
@@ -32,8 +30,6 @@ public class AudioService : IAudioService
     public AudioService()
     {
         _context = Android.App.Application.Context;
-
-        // Inicjalizacja sesji i kanału powiadomień
         InitializeMediaSession();
         CreateNotificationChannel();
         RegisterNotificationReceiver();
@@ -43,6 +39,8 @@ public class AudioService : IAudioService
     {
         _mediaSession = new MediaSession(_context, "RadioVolnaSession");
         _mediaSession.SetCallback(new MediaSessionCallback(this));
+
+        _mediaSession.SetFlags(MediaSessionFlags.HandlesMediaButtons | MediaSessionFlags.HandlesTransportControls);
         _mediaSession.Active = true;
     }
 
@@ -77,10 +75,10 @@ public class AudioService : IAudioService
         }
     }
 
-    public void Play(string url)
+    public void Play(string url, string stationName)
     {
-        // Używamy metody wewnętrznej, żeby nie kasować powiadomienia przy zmianie stacji
         StopPlayerOnly();
+        _currentStationName = stationName;
 
         _player = new MediaPlayer();
 
@@ -100,17 +98,16 @@ public class AudioService : IAudioService
             {
                 _player.Start();
                 IsPlayingChanged?.Invoke(this, true);
-                StatusChanged?.Invoke(this, "Połączenie nawiązane");
+                StatusChanged?.Invoke(this, $"Gra: {_currentStationName}");
 
-                // Pokaż powiadomienie (stan: GRA)
-                UpdateNotification(true);
+                UpdateSystemMediaInfo(true);
             };
 
             _player.Error += (s, e) =>
             {
-                StatusChanged?.Invoke(this, $"Błąd strumienia: {e.What}");
+                StatusChanged?.Invoke(this, $"Błąd: {e.What}");
                 IsPlayingChanged?.Invoke(this, false);
-                UpdateNotification(false);
+                UpdateSystemMediaInfo(false);
             };
 
             StatusChanged?.Invoke(this, "Łączenie...");
@@ -129,9 +126,7 @@ public class AudioService : IAudioService
             _player.Pause();
             IsPlayingChanged?.Invoke(this, false);
             StatusChanged?.Invoke(this, "Wstrzymano");
-
-            // Zaktualizuj powiadomienie (stan: PAUZA)
-            UpdateNotification(false);
+            UpdateSystemMediaInfo(false);
         }
     }
 
@@ -141,21 +136,21 @@ public class AudioService : IAudioService
         {
             _player.Start();
             IsPlayingChanged?.Invoke(this, true);
-            StatusChanged?.Invoke(this, "Połączenie nawiązane");
-
-            // Zaktualizuj powiadomienie (stan: GRA)
-            UpdateNotification(true);
+            StatusChanged?.Invoke(this, $"Połączenie nawiązane");
+            UpdateSystemMediaInfo(true);
         }
     }
 
     public void Stop()
     {
         StopPlayerOnly();
-
         IsPlayingChanged?.Invoke(this, false);
         StatusChanged?.Invoke(this, "Zatrzymano");
 
-        // Usuń powiadomienie całkowicie
+        _mediaSession!.Active = false;
+        _mediaSession.SetMetadata(null);
+        _mediaSession.SetPlaybackState(null);
+
         _notificationManager?.Cancel(NotificationId);
     }
 
@@ -173,70 +168,78 @@ public class AudioService : IAudioService
         }
     }
 
-    // --- LOGIKA BUDOWANIA POWIADOMIENIA ---
-    private void UpdateNotification(bool isPlaying)
+    private void UpdateSystemMediaInfo(bool isPlaying)
     {
+        Bitmap largeIcon = BitmapFactory.DecodeResource(_context.Resources, Resource.Drawable.radio_logo);
+
+        var metadataBuilder = new MediaMetadata.Builder();
+        metadataBuilder.PutString(MediaMetadata.MetadataKeyTitle, isPlaying ? _currentStationName : "Wstrzymano");
+        metadataBuilder.PutString(MediaMetadata.MetadataKeyArtist, "Radio Volna");
+        metadataBuilder.PutString(MediaMetadata.MetadataKeyAlbum, "Radio Internetowe");
+        metadataBuilder.PutBitmap(MediaMetadata.MetadataKeyAlbumArt, largeIcon);
+        metadataBuilder.PutBitmap(MediaMetadata.MetadataKeyArt, largeIcon);
+        _mediaSession!.SetMetadata(metadataBuilder.Build());
+
+        var stateBuilder = new PlaybackState.Builder();
+        var state = isPlaying ? PlaybackStateCode.Playing : PlaybackStateCode.Paused;
+
+        stateBuilder.SetActions(PlaybackState.ActionPlay | PlaybackState.ActionPause | PlaybackState.ActionStop);
+
+        stateBuilder.SetState(state, PlaybackState.PlaybackPositionUnknown, 1.0f);
+
+        _mediaSession.SetPlaybackState(stateBuilder.Build());
+
+        _mediaSession.Active = true;
+
         if (_notificationManager == null) return;
 
-        // 1. Ustal akcję (Graj czy Pauza)
         string action = isPlaying ? ActionPause : ActionPlay;
         var intent = new Intent(action);
-        // Ważne: PendingIntentFlags.Immutable jest wymagane w nowych Androidach
         var pendingIntent = PendingIntent.GetBroadcast(_context, 0, intent, PendingIntentFlags.Immutable | PendingIntentFlags.UpdateCurrent);
 
-        // 2. Wybierz ikonę i tekst przycisku
-        int icon = isPlaying ? Android.Resource.Drawable.IcMediaPause : Android.Resource.Drawable.IcMediaPlay;
+        int iconBtn = isPlaying ? Android.Resource.Drawable.IcMediaPause : Android.Resource.Drawable.IcMediaPlay;
         string title = isPlaying ? "Pauza" : "Graj";
 
-        // 3. Kliknięcie w treść powiadomienia otwiera aplikację
         var openAppIntent = _context.PackageManager?.GetLaunchIntentForPackage(_context.PackageName!);
         var contentIntent = PendingIntent.GetActivity(_context, 0, openAppIntent!, PendingIntentFlags.Immutable);
 
-        // 4. Styl MediaStyle (To sprawia, że wygląda jak odtwarzacz)
         var mediaStyle = new Notification.MediaStyle();
-        mediaStyle.SetMediaSession(_mediaSession!.SessionToken);
-        // .SetShowActionsInCompactView(0) oznacza: pokaż pierwszy dodany przycisk (czyli nasz Play/Pause)
+        mediaStyle.SetMediaSession(_mediaSession.SessionToken);
         mediaStyle.SetShowActionsInCompactView(0);
 
-        // 5. Budowanie
         var builder = new Notification.Builder(_context, ChannelId)
-            .SetSmallIcon(Android.Resource.Drawable.IcMediaPlay) // Ikona systemowa w pasku statusu
+            .SetSmallIcon(Android.Resource.Drawable.IcMediaPlay)
+            .SetLargeIcon(largeIcon)
             .SetContentTitle("Radio Volna")
-            .SetContentText(isPlaying ? "Na antenie" : "Wstrzymano")
+            .SetContentText(isPlaying ? _currentStationName : "Wstrzymano")
             .SetContentIntent(contentIntent)
             .SetStyle(mediaStyle)
-            .SetOngoing(isPlaying) // Jeśli gra, nie da się go łatwo usunąć gestem
-            .AddAction(new Notification.Action(icon, title, pendingIntent)); // Dodajemy TYLKO JEDEN przycisk
+            .SetOngoing(isPlaying)
+            .AddAction(new Notification.Action(iconBtn, title, pendingIntent));
 
         _notificationManager.Notify(NotificationId, builder.Build());
     }
 
-    // --- KLASY POMOCNICZE ---
-
-    // Odbiera kliknięcia w przyciski powiadomienia
     [BroadcastReceiver(Enabled = true, Exported = true)]
     private class NotificationReceiver : BroadcastReceiver
     {
         private readonly AudioService _service;
-        public NotificationReceiver() { } // Wymagany pusty konstruktor
+        public NotificationReceiver() { }
         public NotificationReceiver(AudioService service) => _service = service;
 
         public override void OnReceive(Context? context, Intent? intent)
         {
             if (_service == null) return;
-
             if (intent?.Action == ActionPlay) _service.Resume();
             else if (intent?.Action == ActionPause) _service.Pause();
             else if (intent?.Action == ActionStop) _service.Stop();
         }
     }
 
-    // Obsługuje sterowanie z np. słuchawek Bluetooth
     private class MediaSessionCallback : MediaSession.Callback
     {
         private readonly AudioService _service;
         public MediaSessionCallback(AudioService service) => _service = service;
-
         public override void OnPlay() => _service.Resume();
         public override void OnPause() => _service.Pause();
         public override void OnStop() => _service.Stop();
