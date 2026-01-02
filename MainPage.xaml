@@ -1,0 +1,129 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="RadioVolna.MainPage"
+             BackgroundColor="#121212">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <VerticalStackLayout Grid.Row="0" Spacing="10" Padding="30,40,30,10">
+            <Label Text="Radio Volna"
+                   FontSize="32"
+                   FontAttributes="Bold"
+                   TextColor="White"
+                   HorizontalOptions="Center" />
+
+            <Label x:Name="CurrentStationLabel"
+                   Text="Wybierz stację"
+                   TextColor="#03DAC6"
+                   FontSize="22"
+                   HorizontalOptions="Center"
+                   HorizontalTextAlignment="Center"/>
+
+            <Label x:Name="StatusLabel"
+                   Text="Gotowy"
+                   TextColor="Gray"
+                   FontSize="14"
+                   HorizontalOptions="Center" />
+        </VerticalStackLayout>
+
+        <Image Grid.Row="1"
+               Source="logo_radio_volna.png"
+               Aspect="AspectFit"
+               HorizontalOptions="Center"
+               VerticalOptions="Center"
+               Margin="40"/>
+
+        <VerticalStackLayout Grid.Row="2" Spacing="20" Padding="30,10,30,40">
+
+            <Button Text="≡ LISTA STACJI"
+                    Clicked="OnOpenListClicked"
+                    BackgroundColor="#333333"
+                    TextColor="White"
+                    HeightRequest="60"
+                    CornerRadius="30"/>
+
+            <Button x:Name="PlayPauseBtn"
+                    Text="▶ WZNÓW"
+                    Clicked="OnPlayPauseClicked"
+                    BackgroundColor="#6200EE"
+                    TextColor="White"
+                    HeightRequest="60"
+                    CornerRadius="30"
+                    IsEnabled="False"/>
+
+            <Button Text="❌ WYJŚCIE"
+                    Clicked="OnExitClicked"
+                    BackgroundColor="#B00020"
+                    TextColor="White"
+                    HeightRequest="60"
+                    CornerRadius="30"/>
+
+        </VerticalStackLayout>
+
+
+        <Grid x:Name="StationSelectionOverlay"
+              Grid.RowSpan="3"
+              IsVisible="False"
+              BackgroundColor="#CC000000"
+              Padding="20">
+
+            <Border BackgroundColor="#1E1E1E" 
+                    StrokeThickness="0" 
+                    VerticalOptions="Center" 
+                    HeightRequest="500">
+
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="20"/>
+                </Border.StrokeShape>
+
+                <Grid RowDefinitions="Auto, *, Auto" 
+                      Padding="20">
+                    <Label Grid.Row="0" 
+                           Text="Wybierz stację" 
+                           TextColor="White" 
+                           FontSize="20" 
+                           FontAttributes="Bold" 
+                           HorizontalOptions="Center" 
+                           Margin="0,0,0,15"/>
+
+                    <CollectionView Grid.Row="1" 
+                                    x:Name="StationsList" 
+                                    SelectionMode="Single" 
+                                    SelectionChanged="OnStationSelected">
+
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Border Stroke="Transparent" 
+                                        BackgroundColor="#2C2C2C" 
+                                        Padding="15" 
+                                        Margin="0,5">
+
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="8" />
+                                    </Border.StrokeShape>
+
+                                    <Label Text="{Binding DisplayName}" 
+                                           TextColor="White" 
+                                           FontSize="16" />
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+
+                    <Button Grid.Row="2" 
+                            Text="Anuluj" 
+                            Clicked="OnCloseListClicked" 
+                            BackgroundColor="Transparent" 
+                            TextColor="#FF5555" 
+                            Margin="0,15,0,0"/>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</ContentPage>
