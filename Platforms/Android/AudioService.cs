@@ -1,4 +1,10 @@
-﻿#pragma warning disable CA1416, CA1422, CS8618, CS8602, CS8600, CS0168
+﻿// --- SEKCJA KONFIGURACJI KOMPILATORA ---
+#nullable enable
+#pragma warning disable CS8618
+#pragma warning disable CS8602
+#pragma warning disable CS8600
+#pragma warning disable CS0168
+#pragma warning disable CA1416
 
 using Android.Media;
 using Android.Content;
@@ -7,6 +13,8 @@ using Android.App;
 using Android.Graphics;
 using Android.Media.Session;
 using Android.Graphics.Drawables;
+using Android.Net.Wifi;
+using Android.Net;
 
 namespace RadioVolna;
 
@@ -17,9 +25,9 @@ public class AudioService : IAudioService
     private NotificationManager? _notificationManager;
     private Context _context;
     private NotificationReceiver? _receiver;
+    private WifiManager.WifiLock? _wifiLock;
 
     private string _currentStationName = "Radio Volna";
-
     private const int NotificationId = 1001;
     private const string ChannelId = "radio_volna_channel";
     private const string ActionPlay = "com.radiovolna.ACTION_PLAY";
@@ -41,7 +49,6 @@ public class AudioService : IAudioService
     {
         _mediaSession = new MediaSession(_context, "RadioVolnaSession");
         _mediaSession.SetCallback(new MediaSessionCallback(this));
-
         _mediaSession.SetFlags(MediaSessionFlags.HandlesMediaButtons | MediaSessionFlags.HandlesTransportControls);
         _mediaSession.Active = true;
     }
@@ -54,8 +61,12 @@ public class AudioService : IAudioService
             {
                 Description = "Pasek sterowania radiem"
             };
-            _notificationManager = (NotificationManager)_context.GetSystemService(Context.NotificationService)!;
-            _notificationManager.CreateNotificationChannel(channel);
+
+            _notificationManager = _context.GetSystemService(Context.NotificationService) as NotificationManager;
+            if (_notificationManager != null)
+            {
+                _notificationManager.CreateNotificationChannel(channel);
+            }
         }
     }
 
@@ -77,12 +88,26 @@ public class AudioService : IAudioService
         }
     }
 
+    // --- METODA POMOCNICZA: Zwalnianie blokad ---
+    private void ReleaseWifiLock()
+    {
+        if (_wifiLock != null && _wifiLock.IsHeld)
+        {
+            _wifiLock.Release();
+            _wifiLock = null;
+        }
+    }
+
     public void Play(string url, string stationName)
     {
         StopPlayerOnly();
         _currentStationName = stationName;
 
         _player = new MediaPlayer();
+
+        // --- 1. BLOKADA PROCESORA (CPU WakeLock) ---
+        // To mówi systemowi: "Nie usypiaj procesora, gdy gra muzyka"
+        _player.SetWakeMode(_context, WakeLockFlags.Partial);
 
         if (Build.VERSION.SdkInt >= BuildVersionCodes.Lollipop)
         {
@@ -92,16 +117,27 @@ public class AudioService : IAudioService
                 .Build());
         }
 
+        // --- 2. BLOKADA WIFI (WiFi Lock) ---
+        // To mówi systemowi: "Nie rozłączaj internetu po wygaszeniu ekranu"
+        try
+        {
+            var wifiManager = _context.GetSystemService(Context.WifiService) as WifiManager;
+            if (wifiManager != null)
+            {
+                _wifiLock = wifiManager.CreateWifiLock(WifiMode.FullHighPerf, "RadioVolnaLock");
+                _wifiLock.Acquire();
+            }
+        }
+        catch { } // Ignorujemy błędy blokady, żeby nie wywaliło apki
+
         try
         {
             _player.SetDataSource(url);
-
             _player.Prepared += (s, e) =>
             {
                 _player.Start();
                 IsPlayingChanged?.Invoke(this, true);
                 StatusChanged?.Invoke(this, $"Gra: {_currentStationName}");
-
                 UpdateSystemMediaInfo(true);
             };
 
@@ -110,6 +146,7 @@ public class AudioService : IAudioService
                 StatusChanged?.Invoke(this, $"Błąd: {e.What}");
                 IsPlayingChanged?.Invoke(this, false);
                 UpdateSystemMediaInfo(false);
+                ReleaseWifiLock(); // Zwolnij blokadę przy błędzie
             };
 
             StatusChanged?.Invoke(this, "Łączenie...");
@@ -118,6 +155,7 @@ public class AudioService : IAudioService
         catch (Exception ex)
         {
             StatusChanged?.Invoke(this, $"Błąd: {ex.Message}");
+            ReleaseWifiLock();
         }
     }
 
@@ -129,6 +167,9 @@ public class AudioService : IAudioService
             IsPlayingChanged?.Invoke(this, false);
             StatusChanged?.Invoke(this, "Wstrzymano");
             UpdateSystemMediaInfo(false);
+
+            // Przy pauzie możemy zwolnić WiFi, żeby oszczędzać baterię
+            ReleaseWifiLock();
         }
     }
 
@@ -140,6 +181,18 @@ public class AudioService : IAudioService
             IsPlayingChanged?.Invoke(this, true);
             StatusChanged?.Invoke(this, $"Połączenie nawiązane");
             UpdateSystemMediaInfo(true);
+
+            // Odnawiamy blokadę WiFi
+            try
+            {
+                var wifiManager = _context.GetSystemService(Context.WifiService) as WifiManager;
+                if (wifiManager != null && (_wifiLock == null || !_wifiLock.IsHeld))
+                {
+                    _wifiLock = wifiManager.CreateWifiLock(WifiMode.FullHighPerf, "RadioVolnaLock");
+                    _wifiLock.Acquire();
+                }
+            }
+            catch { }
         }
     }
 
@@ -152,12 +205,14 @@ public class AudioService : IAudioService
         _mediaSession!.Active = false;
         _mediaSession.SetMetadata(null);
         _mediaSession.SetPlaybackState(null);
-
         _notificationManager?.Cancel(NotificationId);
     }
 
     private void StopPlayerOnly()
     {
+        // Zwalniamy blokady przy zatrzymaniu
+        ReleaseWifiLock();
+
         if (_player != null)
         {
             try
@@ -172,7 +227,7 @@ public class AudioService : IAudioService
 
     private void UpdateSystemMediaInfo(bool isPlaying)
     {
-        Bitmap largeIcon = BitmapFactory.DecodeResource(_context.Resources, Resource.Drawable.radio_logo);
+        Bitmap largeIcon = BitmapFactory.DecodeResource(_context.Resources, Resource.Drawable.radio_logo)!;
 
         var metadataBuilder = new MediaMetadata.Builder();
         metadataBuilder.PutString(MediaMetadata.MetadataKeyTitle, isPlaying ? _currentStationName : "Wstrzymano");
@@ -186,11 +241,9 @@ public class AudioService : IAudioService
         var state = isPlaying ? PlaybackStateCode.Playing : PlaybackStateCode.Paused;
 
         stateBuilder.SetActions(PlaybackState.ActionPlay | PlaybackState.ActionPause | PlaybackState.ActionStop);
-
         stateBuilder.SetState(state, PlaybackState.PlaybackPositionUnknown, 1.0f);
 
         _mediaSession.SetPlaybackState(stateBuilder.Build());
-
         _mediaSession.Active = true;
 
         if (_notificationManager == null) return;
@@ -202,8 +255,12 @@ public class AudioService : IAudioService
         int iconBtn = isPlaying ? Android.Resource.Drawable.IcMediaPause : Android.Resource.Drawable.IcMediaPlay;
         string title = isPlaying ? "Pauza" : "Graj";
 
-        var openAppIntent = _context.PackageManager?.GetLaunchIntentForPackage(_context.PackageName!);
-        var contentIntent = PendingIntent.GetActivity(_context, 0, openAppIntent!, PendingIntentFlags.Immutable);
+        var openAppIntent = _context.PackageManager?.GetLaunchIntentForPackage(_context.PackageName ?? "");
+        PendingIntent? contentIntent = null;
+        if (openAppIntent != null)
+        {
+            contentIntent = PendingIntent.GetActivity(_context, 0, openAppIntent, PendingIntentFlags.Immutable);
+        }
 
         var mediaStyle = new Notification.MediaStyle();
         mediaStyle.SetMediaSession(_mediaSession.SessionToken);
@@ -214,10 +271,14 @@ public class AudioService : IAudioService
             .SetLargeIcon(largeIcon)
             .SetContentTitle("Radio Volna")
             .SetContentText(isPlaying ? _currentStationName : "Wstrzymano")
-            .SetContentIntent(contentIntent)
             .SetStyle(mediaStyle)
             .SetOngoing(isPlaying)
             .AddAction(new Notification.Action(iconBtn, title, pendingIntent));
+
+        if (contentIntent != null)
+        {
+            builder.SetContentIntent(contentIntent);
+        }
 
         _notificationManager.Notify(NotificationId, builder.Build());
     }
