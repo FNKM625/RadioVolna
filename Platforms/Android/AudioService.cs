@@ -1,23 +1,40 @@
-﻿using Android.Media;
+﻿// --- KONFIGURACJA KOMPILATORA ---
+#nullable enable
+#pragma warning disable CS8618
+#pragma warning disable CS8602
+#pragma warning disable CS8600
+#pragma warning disable CS0168
+#pragma warning disable CA1416
+
+using Android.Media;
 using Android.Content;
 using Android.OS;
 using Android.App;
 using Android.Graphics;
 using Android.Media.Session;
 using Android.Graphics.Drawables;
+using Android.Net.Wifi;
+using Android.Net;
+using Java.Lang; // Wymagane do dziedziczenia Object
 
 namespace RadioVolna;
 
-public class AudioService : IAudioService
+public class AudioService : Java.Lang.Object, IAudioService, AudioManager.IOnAudioFocusChangeListener
 {
     private MediaPlayer? _player;
     private MediaSession? _mediaSession;
     private NotificationManager? _notificationManager;
+    private AudioManager? _audioManager;
     private Context _context;
     private NotificationReceiver? _receiver;
 
-    private string _currentStationName = "Radio Volna";
+    // Zmienne do Audio Focus
+    private AudioFocusRequestClass? _focusRequest;
+    private bool _resumeOnFocusGain = false;
 
+    private WifiManager.WifiLock? _wifiLock;
+
+    private string _currentStationName = "Radio Volna";
     private const int NotificationId = 1001;
     private const string ChannelId = "radio_volna_channel";
     private const string ActionPlay = "com.radiovolna.ACTION_PLAY";
@@ -30,16 +47,94 @@ public class AudioService : IAudioService
     public AudioService()
     {
         _context = Android.App.Application.Context;
+        _audioManager = _context.GetSystemService(Context.AudioService) as AudioManager;
+
         InitializeMediaSession();
         CreateNotificationChannel();
         RegisterNotificationReceiver();
     }
 
+    // --- LOGIKA AUDIO FOCUS ---
+    private bool RequestAudioFocus()
+    {
+        if (_audioManager == null) return false;
+
+        if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
+        {
+            var attributes = new AudioAttributes.Builder()
+                .SetUsage(AudioUsageKind.Media)
+                .SetContentType(AudioContentType.Music)
+                .Build();
+
+            _focusRequest = new AudioFocusRequestClass.Builder(AudioFocus.Gain)
+                .SetAudioAttributes(attributes)
+                .SetAcceptsDelayedFocusGain(true)
+                .SetOnAudioFocusChangeListener(this)
+                .Build();
+
+            var result = _audioManager.RequestAudioFocus(_focusRequest);
+            return (int)result == (int)AudioFocusRequest.Granted;
+        }
+        else
+        {
+            var result = _audioManager.RequestAudioFocus(this, Android.Media.Stream.Music, AudioFocus.Gain);
+            return (int)result == (int)AudioFocus.Gain;
+        }
+    }
+
+    private void AbandonAudioFocus()
+    {
+        if (_audioManager == null) return;
+
+        if (Build.VERSION.SdkInt >= BuildVersionCodes.O && _focusRequest != null)
+        {
+            _audioManager.AbandonAudioFocusRequest(_focusRequest);
+        }
+        else
+        {
+            _audioManager.AbandonAudioFocus(this);
+        }
+    }
+
+    public void OnAudioFocusChange(AudioFocus focusChange)
+    {
+        switch (focusChange)
+        {
+            case AudioFocus.Gain:
+                if (_resumeOnFocusGain)
+                {
+                    Resume();
+                    _resumeOnFocusGain = false;
+                }
+                _player?.SetVolume(1.0f, 1.0f);
+                break;
+
+            case AudioFocus.Loss:
+                Stop();
+                break;
+
+            case AudioFocus.LossTransient:
+                if (_player != null && _player.IsPlaying)
+                {
+                    _resumeOnFocusGain = true;
+                    Pause();
+                }
+                break;
+
+            case AudioFocus.LossTransientCanDuck:
+                if (_player != null && _player.IsPlaying)
+                {
+                    _player.SetVolume(0.1f, 0.1f);
+                }
+                break;
+        }
+    }
+
+    // --- POZOSTAŁE METODY ---
     private void InitializeMediaSession()
     {
         _mediaSession = new MediaSession(_context, "RadioVolnaSession");
         _mediaSession.SetCallback(new MediaSessionCallback(this));
-
         _mediaSession.SetFlags(MediaSessionFlags.HandlesMediaButtons | MediaSessionFlags.HandlesTransportControls);
         _mediaSession.Active = true;
     }
@@ -52,8 +147,12 @@ public class AudioService : IAudioService
             {
                 Description = "Pasek sterowania radiem"
             };
-            _notificationManager = (NotificationManager)_context.GetSystemService(Context.NotificationService)!;
-            _notificationManager.CreateNotificationChannel(channel);
+
+            _notificationManager = _context.GetSystemService(Context.NotificationService) as NotificationManager;
+            if (_notificationManager != null)
+            {
+                _notificationManager.CreateNotificationChannel(channel);
+            }
         }
     }
 
@@ -75,12 +174,28 @@ public class AudioService : IAudioService
         }
     }
 
+    private void ReleaseWifiLock()
+    {
+        if (_wifiLock != null && _wifiLock.IsHeld)
+        {
+            _wifiLock.Release();
+            _wifiLock = null;
+        }
+    }
+
     public void Play(string url, string stationName)
     {
+        if (!RequestAudioFocus())
+        {
+            StatusChanged?.Invoke(this, "Błąd: Nie można uzyskać dostępu do audio");
+            return;
+        }
+
         StopPlayerOnly();
         _currentStationName = stationName;
 
         _player = new MediaPlayer();
+        _player.SetWakeMode(_context, WakeLockFlags.Partial);
 
         if (Build.VERSION.SdkInt >= BuildVersionCodes.Lollipop)
         {
@@ -92,14 +207,24 @@ public class AudioService : IAudioService
 
         try
         {
-            _player.SetDataSource(url);
+            var wifiManager = _context.GetSystemService(Context.WifiService) as WifiManager;
+            if (wifiManager != null)
+            {
+                // NAPRAWA BŁĘDU CS0103: Dodano pełną ścieżkę 'Android.Net.WifiMode'
+                _wifiLock = wifiManager.CreateWifiLock(Android.Net.WifiMode.FullHighPerf, "RadioVolnaLock");
+                _wifiLock.Acquire();
+            }
+        }
+        catch { }
 
+        try
+        {
+            _player.SetDataSource(url);
             _player.Prepared += (s, e) =>
             {
                 _player.Start();
                 IsPlayingChanged?.Invoke(this, true);
                 StatusChanged?.Invoke(this, $"Gra: {_currentStationName}");
-
                 UpdateSystemMediaInfo(true);
             };
 
@@ -108,14 +233,21 @@ public class AudioService : IAudioService
                 StatusChanged?.Invoke(this, $"Błąd: {e.What}");
                 IsPlayingChanged?.Invoke(this, false);
                 UpdateSystemMediaInfo(false);
+                ReleaseWifiLock();
             };
 
             StatusChanged?.Invoke(this, "Łączenie...");
             _player.PrepareAsync();
         }
-        catch (Exception ex)
+        catch (Android.Util.AndroidRuntimeException ex)
         {
             StatusChanged?.Invoke(this, $"Błąd: {ex.Message}");
+            ReleaseWifiLock();
+        }
+        catch (Java.Lang.Exception ex)
+        {
+            StatusChanged?.Invoke(this, $"Błąd: {ex.Message}");
+            ReleaseWifiLock();
         }
     }
 
@@ -127,22 +259,37 @@ public class AudioService : IAudioService
             IsPlayingChanged?.Invoke(this, false);
             StatusChanged?.Invoke(this, "Wstrzymano");
             UpdateSystemMediaInfo(false);
+            ReleaseWifiLock();
         }
     }
 
     public void Resume()
     {
+        if (!RequestAudioFocus()) return;
+
         if (_player != null && !_player.IsPlaying)
         {
             _player.Start();
             IsPlayingChanged?.Invoke(this, true);
             StatusChanged?.Invoke(this, $"Połączenie nawiązane");
             UpdateSystemMediaInfo(true);
+
+            try
+            {
+                var wifiManager = _context.GetSystemService(Context.WifiService) as WifiManager;
+                if (wifiManager != null && (_wifiLock == null || !_wifiLock.IsHeld))
+                {
+                    _wifiLock = wifiManager.CreateWifiLock(Android.Net.WifiMode.FullHighPerf, "RadioVolnaLock");
+                    _wifiLock.Acquire();
+                }
+            }
+            catch { }
         }
     }
 
     public void Stop()
     {
+        AbandonAudioFocus();
         StopPlayerOnly();
         IsPlayingChanged?.Invoke(this, false);
         StatusChanged?.Invoke(this, "Zatrzymano");
@@ -150,12 +297,12 @@ public class AudioService : IAudioService
         _mediaSession!.Active = false;
         _mediaSession.SetMetadata(null);
         _mediaSession.SetPlaybackState(null);
-
         _notificationManager?.Cancel(NotificationId);
     }
 
     private void StopPlayerOnly()
     {
+        ReleaseWifiLock();
         if (_player != null)
         {
             try
@@ -170,7 +317,7 @@ public class AudioService : IAudioService
 
     private void UpdateSystemMediaInfo(bool isPlaying)
     {
-        Bitmap largeIcon = BitmapFactory.DecodeResource(_context.Resources, Resource.Drawable.radio_logo);
+        Bitmap largeIcon = BitmapFactory.DecodeResource(_context.Resources, Resource.Drawable.radio_logo)!;
 
         var metadataBuilder = new MediaMetadata.Builder();
         metadataBuilder.PutString(MediaMetadata.MetadataKeyTitle, isPlaying ? _currentStationName : "Wstrzymano");
@@ -184,11 +331,9 @@ public class AudioService : IAudioService
         var state = isPlaying ? PlaybackStateCode.Playing : PlaybackStateCode.Paused;
 
         stateBuilder.SetActions(PlaybackState.ActionPlay | PlaybackState.ActionPause | PlaybackState.ActionStop);
-
         stateBuilder.SetState(state, PlaybackState.PlaybackPositionUnknown, 1.0f);
 
         _mediaSession.SetPlaybackState(stateBuilder.Build());
-
         _mediaSession.Active = true;
 
         if (_notificationManager == null) return;
@@ -200,8 +345,12 @@ public class AudioService : IAudioService
         int iconBtn = isPlaying ? Android.Resource.Drawable.IcMediaPause : Android.Resource.Drawable.IcMediaPlay;
         string title = isPlaying ? "Pauza" : "Graj";
 
-        var openAppIntent = _context.PackageManager?.GetLaunchIntentForPackage(_context.PackageName!);
-        var contentIntent = PendingIntent.GetActivity(_context, 0, openAppIntent!, PendingIntentFlags.Immutable);
+        var openAppIntent = _context.PackageManager?.GetLaunchIntentForPackage(_context.PackageName ?? "");
+        PendingIntent? contentIntent = null;
+        if (openAppIntent != null)
+        {
+            contentIntent = PendingIntent.GetActivity(_context, 0, openAppIntent, PendingIntentFlags.Immutable);
+        }
 
         var mediaStyle = new Notification.MediaStyle();
         mediaStyle.SetMediaSession(_mediaSession.SessionToken);
@@ -212,10 +361,14 @@ public class AudioService : IAudioService
             .SetLargeIcon(largeIcon)
             .SetContentTitle("Radio Volna")
             .SetContentText(isPlaying ? _currentStationName : "Wstrzymano")
-            .SetContentIntent(contentIntent)
             .SetStyle(mediaStyle)
             .SetOngoing(isPlaying)
             .AddAction(new Notification.Action(iconBtn, title, pendingIntent));
+
+        if (contentIntent != null)
+        {
+            builder.SetContentIntent(contentIntent);
+        }
 
         _notificationManager.Notify(NotificationId, builder.Build());
     }
