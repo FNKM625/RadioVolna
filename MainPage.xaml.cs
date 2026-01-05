@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using System.Net.Http.Json;
+using Microsoft.Maui.Storage;
 
 namespace RadioVolna;
 
@@ -15,6 +16,28 @@ public partial class MainPage : ContentPage
         InitializeComponent();
         _audioService = audioService;
         StationsList.ItemsSource = Stations;
+
+        // --- NOWOŚĆ: Nasłuchujemy zmian statusu z AudioService ---
+        _audioService.StatusChanged += (s, message) =>
+        {
+            // Musimy to robić w "MainThread", bo zmieniamy wygląd aplikacji
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                // Jeśli wiadomość zaczyna się od "Gra:", to znaczy że połączono
+                if (message.StartsWith("Gra:"))
+                {
+                    StatusLabel.Text = "Odtwarzanie...";
+                    StatusLabel.TextColor = Colors.LightGreen;
+                }
+                else
+                {
+                    // W przeciwnym razie wyświetlamy status (np. "Łączenie...", "Błąd...")
+                    StatusLabel.Text = message;
+                    StatusLabel.TextColor = Colors.Orange;
+                }
+            });
+        };
+        // ---------------------------------------------------------
 
         LoadStations();
     }
@@ -47,25 +70,21 @@ public partial class MainPage : ContentPage
         }
     }
 
-    // --- LOGIKA URUCHAMIANIA PRZY STARCIE ---
     private async void CheckAndRunAutoStart()
     {
         string autoStartName = Preferences.Get("AutoStartStationName", null);
-
         if (!string.IsNullOrEmpty(autoStartName))
         {
             var station = Stations.FirstOrDefault(s => s.DisplayName == autoStartName);
-
             if (station != null)
             {
                 await Task.Delay(500);
                 PlayStation(station);
-                StatusLabel.Text = $"Autostart: {station.DisplayName}";
+                // Tu też zmieniamy na status łączenia
+                StatusLabel.Text = "Autostart (Łączenie...)";
             }
         }
     }
-
-    // --- OBSŁUGA AUTOSTARTU (Z MENU USTAWIEŃ) ---
 
     private void OnAutostartOptionClicked(object sender, EventArgs e)
     {
@@ -90,26 +109,24 @@ public partial class MainPage : ContentPage
         if (e.CurrentSelection.FirstOrDefault() is Station selectedStation)
         {
             Preferences.Set("AutoStartStationName", selectedStation.DisplayName);
-
             await DisplayAlert("Sukces", $"Ustawiono autostart na:\n{selectedStation.DisplayName}", "OK");
-
             AutoStartOverlay.IsVisible = false;
             AutoStartList.SelectedItem = null;
         }
     }
 
-    private void OnCloseAutoStartClicked(object sender, EventArgs e)
-    {
-        AutoStartOverlay.IsVisible = false;
-    }
+    private void OnCloseAutoStartClicked(object sender, EventArgs e) => AutoStartOverlay.IsVisible = false;
 
-
+    // --- POPRAWIONA METODA PLAY ---
     private void PlayStation(Station station)
     {
         _audioService.Play(station.Url, station.DisplayName);
         CurrentStationLabel.Text = station.DisplayName;
-        StatusLabel.Text = "Odtwarzanie...";
-        StatusLabel.TextColor = Colors.LightGreen;
+
+        // ZMIANA: Ustawiamy "Łączenie..." i kolor pomarańczowy
+        StatusLabel.Text = "Łączenie...";
+        StatusLabel.TextColor = Colors.Orange;
+
         PlayPauseBtn.IsEnabled = true;
         PlayPauseBtn.Text = "⏸ PAUZA";
     }
@@ -147,7 +164,6 @@ public partial class MainPage : ContentPage
         foreach (var s in sortedList) Stations.Add(s);
     }
 
-    // --- OBSŁUGA UI ---
     private void OnSettingsClicked(object sender, EventArgs e) => SettingsOverlay.IsVisible = true;
     private void OnCloseSettingsClicked(object sender, EventArgs e) => SettingsOverlay.IsVisible = false;
     private void OnOpenListClicked(object sender, EventArgs e) => StationSelectionOverlay.IsVisible = true;
@@ -171,8 +187,9 @@ public partial class MainPage : ContentPage
         {
             _audioService.Resume();
             PlayPauseBtn.Text = "⏸ PAUZA";
-            StatusLabel.Text = "Odtwarzanie...";
-            StatusLabel.TextColor = Colors.LightGreen;
+            // Przy wznowieniu też może chwilę łączyć
+            StatusLabel.Text = "Wznawianie...";
+            StatusLabel.TextColor = Colors.Orange;
         }
     }
 
