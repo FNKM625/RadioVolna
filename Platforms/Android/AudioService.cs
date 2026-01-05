@@ -1,4 +1,4 @@
-﻿// --- SEKCJA KONFIGURACJI KOMPILATORA ---
+﻿// --- KONFIGURACJA KOMPILATORA ---
 #nullable enable
 #pragma warning disable CS8618
 #pragma warning disable CS8602
@@ -15,16 +15,23 @@ using Android.Media.Session;
 using Android.Graphics.Drawables;
 using Android.Net.Wifi;
 using Android.Net;
+using Java.Lang; // Wymagane do dziedziczenia Object
 
 namespace RadioVolna;
 
-public class AudioService : IAudioService
+public class AudioService : Java.Lang.Object, IAudioService, AudioManager.IOnAudioFocusChangeListener
 {
     private MediaPlayer? _player;
     private MediaSession? _mediaSession;
     private NotificationManager? _notificationManager;
+    private AudioManager? _audioManager;
     private Context _context;
     private NotificationReceiver? _receiver;
+
+    // Zmienne do Audio Focus
+    private AudioFocusRequestClass? _focusRequest;
+    private bool _resumeOnFocusGain = false;
+
     private WifiManager.WifiLock? _wifiLock;
 
     private string _currentStationName = "Radio Volna";
@@ -40,11 +47,90 @@ public class AudioService : IAudioService
     public AudioService()
     {
         _context = Android.App.Application.Context;
+        _audioManager = _context.GetSystemService(Context.AudioService) as AudioManager;
+
         InitializeMediaSession();
         CreateNotificationChannel();
         RegisterNotificationReceiver();
     }
 
+    // --- LOGIKA AUDIO FOCUS ---
+    private bool RequestAudioFocus()
+    {
+        if (_audioManager == null) return false;
+
+        if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
+        {
+            var attributes = new AudioAttributes.Builder()
+                .SetUsage(AudioUsageKind.Media)
+                .SetContentType(AudioContentType.Music)
+                .Build();
+
+            _focusRequest = new AudioFocusRequestClass.Builder(AudioFocus.Gain)
+                .SetAudioAttributes(attributes)
+                .SetAcceptsDelayedFocusGain(true)
+                .SetOnAudioFocusChangeListener(this)
+                .Build();
+
+            var result = _audioManager.RequestAudioFocus(_focusRequest);
+            return (int)result == (int)AudioFocusRequest.Granted;
+        }
+        else
+        {
+            var result = _audioManager.RequestAudioFocus(this, Android.Media.Stream.Music, AudioFocus.Gain);
+            return (int)result == (int)AudioFocus.Gain;
+        }
+    }
+
+    private void AbandonAudioFocus()
+    {
+        if (_audioManager == null) return;
+
+        if (Build.VERSION.SdkInt >= BuildVersionCodes.O && _focusRequest != null)
+        {
+            _audioManager.AbandonAudioFocusRequest(_focusRequest);
+        }
+        else
+        {
+            _audioManager.AbandonAudioFocus(this);
+        }
+    }
+
+    public void OnAudioFocusChange(AudioFocus focusChange)
+    {
+        switch (focusChange)
+        {
+            case AudioFocus.Gain:
+                if (_resumeOnFocusGain)
+                {
+                    Resume();
+                    _resumeOnFocusGain = false;
+                }
+                _player?.SetVolume(1.0f, 1.0f);
+                break;
+
+            case AudioFocus.Loss:
+                Stop();
+                break;
+
+            case AudioFocus.LossTransient:
+                if (_player != null && _player.IsPlaying)
+                {
+                    _resumeOnFocusGain = true;
+                    Pause();
+                }
+                break;
+
+            case AudioFocus.LossTransientCanDuck:
+                if (_player != null && _player.IsPlaying)
+                {
+                    _player.SetVolume(0.1f, 0.1f);
+                }
+                break;
+        }
+    }
+
+    // --- POZOSTAŁE METODY ---
     private void InitializeMediaSession()
     {
         _mediaSession = new MediaSession(_context, "RadioVolnaSession");
@@ -88,7 +174,6 @@ public class AudioService : IAudioService
         }
     }
 
-    // --- METODA POMOCNICZA: Zwalnianie blokad ---
     private void ReleaseWifiLock()
     {
         if (_wifiLock != null && _wifiLock.IsHeld)
@@ -100,13 +185,16 @@ public class AudioService : IAudioService
 
     public void Play(string url, string stationName)
     {
+        if (!RequestAudioFocus())
+        {
+            StatusChanged?.Invoke(this, "Błąd: Nie można uzyskać dostępu do audio");
+            return;
+        }
+
         StopPlayerOnly();
         _currentStationName = stationName;
 
         _player = new MediaPlayer();
-
-        // --- 1. BLOKADA PROCESORA (CPU WakeLock) ---
-        // To mówi systemowi: "Nie usypiaj procesora, gdy gra muzyka"
         _player.SetWakeMode(_context, WakeLockFlags.Partial);
 
         if (Build.VERSION.SdkInt >= BuildVersionCodes.Lollipop)
@@ -117,18 +205,17 @@ public class AudioService : IAudioService
                 .Build());
         }
 
-        // --- 2. BLOKADA WIFI (WiFi Lock) ---
-        // To mówi systemowi: "Nie rozłączaj internetu po wygaszeniu ekranu"
         try
         {
             var wifiManager = _context.GetSystemService(Context.WifiService) as WifiManager;
             if (wifiManager != null)
             {
-                _wifiLock = wifiManager.CreateWifiLock(WifiMode.FullHighPerf, "RadioVolnaLock");
+                // NAPRAWA BŁĘDU CS0103: Dodano pełną ścieżkę 'Android.Net.WifiMode'
+                _wifiLock = wifiManager.CreateWifiLock(Android.Net.WifiMode.FullHighPerf, "RadioVolnaLock");
                 _wifiLock.Acquire();
             }
         }
-        catch { } // Ignorujemy błędy blokady, żeby nie wywaliło apki
+        catch { }
 
         try
         {
@@ -146,13 +233,18 @@ public class AudioService : IAudioService
                 StatusChanged?.Invoke(this, $"Błąd: {e.What}");
                 IsPlayingChanged?.Invoke(this, false);
                 UpdateSystemMediaInfo(false);
-                ReleaseWifiLock(); // Zwolnij blokadę przy błędzie
+                ReleaseWifiLock();
             };
 
             StatusChanged?.Invoke(this, "Łączenie...");
             _player.PrepareAsync();
         }
-        catch (Exception ex)
+        catch (Android.Util.AndroidRuntimeException ex)
+        {
+            StatusChanged?.Invoke(this, $"Błąd: {ex.Message}");
+            ReleaseWifiLock();
+        }
+        catch (Java.Lang.Exception ex)
         {
             StatusChanged?.Invoke(this, $"Błąd: {ex.Message}");
             ReleaseWifiLock();
@@ -167,14 +259,14 @@ public class AudioService : IAudioService
             IsPlayingChanged?.Invoke(this, false);
             StatusChanged?.Invoke(this, "Wstrzymano");
             UpdateSystemMediaInfo(false);
-
-            // Przy pauzie możemy zwolnić WiFi, żeby oszczędzać baterię
             ReleaseWifiLock();
         }
     }
 
     public void Resume()
     {
+        if (!RequestAudioFocus()) return;
+
         if (_player != null && !_player.IsPlaying)
         {
             _player.Start();
@@ -182,13 +274,12 @@ public class AudioService : IAudioService
             StatusChanged?.Invoke(this, $"Połączenie nawiązane");
             UpdateSystemMediaInfo(true);
 
-            // Odnawiamy blokadę WiFi
             try
             {
                 var wifiManager = _context.GetSystemService(Context.WifiService) as WifiManager;
                 if (wifiManager != null && (_wifiLock == null || !_wifiLock.IsHeld))
                 {
-                    _wifiLock = wifiManager.CreateWifiLock(WifiMode.FullHighPerf, "RadioVolnaLock");
+                    _wifiLock = wifiManager.CreateWifiLock(Android.Net.WifiMode.FullHighPerf, "RadioVolnaLock");
                     _wifiLock.Acquire();
                 }
             }
@@ -198,6 +289,7 @@ public class AudioService : IAudioService
 
     public void Stop()
     {
+        AbandonAudioFocus();
         StopPlayerOnly();
         IsPlayingChanged?.Invoke(this, false);
         StatusChanged?.Invoke(this, "Zatrzymano");
@@ -210,9 +302,7 @@ public class AudioService : IAudioService
 
     private void StopPlayerOnly()
     {
-        // Zwalniamy blokady przy zatrzymaniu
         ReleaseWifiLock();
-
         if (_player != null)
         {
             try
