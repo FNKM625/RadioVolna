@@ -1,10 +1,5 @@
-﻿// --- KONFIGURACJA KOMPILATORA ---
-#nullable enable
-#pragma warning disable CS8618
-#pragma warning disable CS8602
-#pragma warning disable CS8600
-#pragma warning disable CS0168
-#pragma warning disable CA1416
+﻿#nullable enable
+#pragma warning disable CS8618, CS8602, CS8600, CS0168, CA1416
 
 using Android.Media;
 using Android.Content;
@@ -12,10 +7,7 @@ using Android.OS;
 using Android.App;
 using Android.Graphics;
 using Android.Media.Session;
-using Android.Graphics.Drawables;
 using Android.Net.Wifi;
-using Android.Net;
-using Java.Lang; // Wymagane do dziedziczenia Object
 
 namespace RadioVolna;
 
@@ -27,11 +19,8 @@ public class AudioService : Java.Lang.Object, IAudioService, AudioManager.IOnAud
     private AudioManager? _audioManager;
     private Context _context;
     private NotificationReceiver? _receiver;
-
-    // Zmienne do Audio Focus
     private AudioFocusRequestClass? _focusRequest;
     private bool _resumeOnFocusGain = false;
-
     private WifiManager.WifiLock? _wifiLock;
 
     private string _currentStationName = "Radio Volna";
