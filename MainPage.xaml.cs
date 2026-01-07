@@ -17,13 +17,10 @@ public partial class MainPage : ContentPage
         _audioService = audioService;
         StationsList.ItemsSource = Stations;
 
-        // --- NOWOŚĆ: Nasłuchujemy zmian statusu z AudioService ---
         _audioService.StatusChanged += (s, message) =>
         {
-            // Musimy to robić w "MainThread", bo zmieniamy wygląd aplikacji
             MainThread.BeginInvokeOnMainThread(() =>
             {
-                // Jeśli wiadomość zaczyna się od "Gra:", to znaczy że połączono
                 if (message.StartsWith("Gra:"))
                 {
                     StatusLabel.Text = "Odtwarzanie...";
@@ -31,13 +28,11 @@ public partial class MainPage : ContentPage
                 }
                 else
                 {
-                    // W przeciwnym razie wyświetlamy status (np. "Łączenie...", "Błąd...")
                     StatusLabel.Text = message;
                     StatusLabel.TextColor = Colors.Orange;
                 }
             });
         };
-        // ---------------------------------------------------------
 
         LoadStations();
     }
@@ -80,7 +75,6 @@ public partial class MainPage : ContentPage
             {
                 await Task.Delay(500);
                 PlayStation(station);
-                // Tu też zmieniamy na status łączenia
                 StatusLabel.Text = "Autostart (Łączenie...)";
             }
         }
@@ -123,7 +117,6 @@ public partial class MainPage : ContentPage
         _audioService.Play(station.Url, station.DisplayName);
         CurrentStationLabel.Text = station.DisplayName;
 
-        // ZMIANA: Ustawiamy "Łączenie..." i kolor pomarańczowy
         StatusLabel.Text = "Łączenie...";
         StatusLabel.TextColor = Colors.Orange;
 
@@ -187,7 +180,6 @@ public partial class MainPage : ContentPage
         {
             _audioService.Resume();
             PlayPauseBtn.Text = "⏸ PAUZA";
-            // Przy wznowieniu też może chwilę łączyć
             StatusLabel.Text = "Wznawianie...";
             StatusLabel.TextColor = Colors.Orange;
         }

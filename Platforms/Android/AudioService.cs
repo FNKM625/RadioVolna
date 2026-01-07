@@ -8,7 +8,7 @@ using Android.App;
 using Android.Graphics;
 using Android.Media.Session;
 using Android.Net.Wifi;
-using System.Collections.Generic; // WAŻNE: Potrzebne do nagłówków
+using System.Collections.Generic;
 
 namespace RadioVolna;
 
@@ -126,20 +126,16 @@ public class AudioService : Java.Lang.Object, IAudioService, AudioManager.IOnAud
 
         try
         {
-            // --- NAPRAWA DLA RMF FM / ZNAD WILII ---
-            // Używamy Uri.Parse i nagłówków User-Agent, aby udawać przeglądarkę
             var uri = Android.Net.Uri.Parse(url);
             var headers = new Dictionary<string, string>();
             headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
 
             _player.SetDataSource(_context, uri, headers);
-            // ----------------------------------------
 
             _player.Prepared += (s, e) =>
             {
                 _player.Start();
                 IsPlayingChanged?.Invoke(this, true);
-                // Komunikat "Gra:" jest ważny dla MainPage.xaml.cs!
                 StatusChanged?.Invoke(this, $"Gra: {_currentStationName}");
                 UpdateSystemMediaInfo(true);
             };
@@ -207,7 +203,6 @@ public class AudioService : Java.Lang.Object, IAudioService, AudioManager.IOnAud
 
     private void UpdateSystemMediaInfo(bool isPlaying)
     {
-        // (Reszta kodu bez zmian, dla czytelności skrócona)
         Bitmap largeIcon = BitmapFactory.DecodeResource(_context.Resources, Resource.Drawable.radio_logo)!;
         var metadataBuilder = new MediaMetadata.Builder();
         metadataBuilder.PutString(MediaMetadata.MetadataKeyTitle, isPlaying ? _currentStationName : "Wstrzymano");
