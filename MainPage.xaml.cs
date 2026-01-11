@@ -9,6 +9,8 @@ public partial class MainPage : ContentPage
     private readonly IAudioService _audioService;
     public ObservableCollection<Station> Stations { get; set; } = new();
     private readonly HttpClient _httpClient = new HttpClient();
+
+    // Twój link do GitHub
     private const string GitHubJsonUrl = "https://raw.githubusercontent.com/FNKM625/RadioVolnaData/refs/heads/main/station.json";
 
     public MainPage(IAudioService audioService)
@@ -17,11 +19,12 @@ public partial class MainPage : ContentPage
         _audioService = audioService;
         StationsList.ItemsSource = Stations;
 
+        // Nasłuchiwanie statusu z AudioService
         _audioService.StatusChanged += (s, message) =>
         {
             MainThread.BeginInvokeOnMainThread(() =>
             {
-                if (message.StartsWith("Gra:"))
+                if (message.StartsWith("Gra:") || message.StartsWith("Gra"))
                 {
                     StatusLabel.Text = "Odtwarzanie...";
                     StatusLabel.TextColor = Colors.LightGreen;
@@ -80,6 +83,10 @@ public partial class MainPage : ContentPage
         }
     }
 
+    // --- MENU USTAWIEŃ (PRAWY GÓRNY RÓG) ---
+    private void OnSettingsClicked(object sender, EventArgs e) => SettingsOverlay.IsVisible = true;
+    private void OnCloseSettingsClicked(object sender, EventArgs e) => SettingsOverlay.IsVisible = false;
+
     private void OnAutostartOptionClicked(object sender, EventArgs e)
     {
         SettingsOverlay.IsVisible = false;
@@ -110,8 +117,13 @@ public partial class MainPage : ContentPage
     }
 
     private void OnCloseAutoStartClicked(object sender, EventArgs e) => AutoStartOverlay.IsVisible = false;
+    private async void OnSettingsOptionClicked(object sender, EventArgs e)
+    {
+        if (sender is Button btn) { await btn.FadeTo(0.5, 100); await btn.FadeTo(1.0, 100); }
+    }
 
-    // --- POPRAWIONA METODA PLAY ---
+    // --- GŁÓWNA LOGIKA ODTWARZANIA ---
+
     private void PlayStation(Station station)
     {
         _audioService.Play(station.Url, station.DisplayName);
@@ -157,15 +169,9 @@ public partial class MainPage : ContentPage
         foreach (var s in sortedList) Stations.Add(s);
     }
 
-    private void OnSettingsClicked(object sender, EventArgs e) => SettingsOverlay.IsVisible = true;
-    private void OnCloseSettingsClicked(object sender, EventArgs e) => SettingsOverlay.IsVisible = false;
+    // --- PRZYCISKI DOLNE ---
     private void OnOpenListClicked(object sender, EventArgs e) => StationSelectionOverlay.IsVisible = true;
     private void OnCloseListClicked(object sender, EventArgs e) => StationSelectionOverlay.IsVisible = false;
-
-    private async void OnSettingsOptionClicked(object sender, EventArgs e)
-    {
-        if (sender is Button btn) { await btn.FadeTo(0.5, 100); await btn.FadeTo(1.0, 100); }
-    }
 
     private void OnPlayPauseClicked(object sender, EventArgs e)
     {
