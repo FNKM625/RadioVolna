@@ -18,10 +18,14 @@ public class AudioService : Java.Lang.Object, IAudioService, AudioManager.IOnAud
     private NotificationManager? _notificationManager;
     private AudioManager? _audioManager;
     private Context _context;
+
+    // Blokady systemowe (To one utrzymują radio przy życiu w tle)
+    private WifiManager.WifiLock? _wifiLock;
+    private PowerManager.WakeLock? _powerWakeLock; // <--- NOWOŚĆ: Twarda blokada CPU
+
     private NotificationReceiver? _receiver;
     private AudioFocusRequestClass? _focusRequest;
     private bool _resumeOnFocusGain = false;
-    private WifiManager.WifiLock? _wifiLock;
 
     private string _currentStationName = "Radio Volna";
     private const int NotificationId = 1001;
@@ -66,8 +70,10 @@ public class AudioService : Java.Lang.Object, IAudioService, AudioManager.IOnAud
         }
         else
         {
+#pragma warning disable CS0618
             var result = _audioManager.RequestAudioFocus(this, Android.Media.Stream.Music, AudioFocus.Gain);
             return (int)result == (int)AudioFocus.Gain;
+#pragma warning restore CS0618
         }
     }
 
@@ -76,13 +82,11 @@ public class AudioService : Java.Lang.Object, IAudioService, AudioManager.IOnAud
         if (_audioManager == null) return;
 
         if (Build.VERSION.SdkInt >= BuildVersionCodes.O && _focusRequest != null)
-        {
             _audioManager.AbandonAudioFocusRequest(_focusRequest);
-        }
         else
-        {
+#pragma warning disable CS0618
             _audioManager.AbandonAudioFocus(this);
-        }
+#pragma warning restore CS0618
     }
 
     public void OnAudioFocusChange(AudioFocus focusChange)
@@ -97,11 +101,9 @@ public class AudioService : Java.Lang.Object, IAudioService, AudioManager.IOnAud
                 }
                 _player?.SetVolume(1.0f, 1.0f);
                 break;
-
             case AudioFocus.Loss:
-                Stop();
+                Stop(); // Trwała utrata fokusu (np. inne radio włączyło się)
                 break;
-
             case AudioFocus.LossTransient:
                 if (_player != null && _player.IsPlaying)
                 {
@@ -109,81 +111,71 @@ public class AudioService : Java.Lang.Object, IAudioService, AudioManager.IOnAud
                     Pause();
                 }
                 break;
-
             case AudioFocus.LossTransientCanDuck:
-                if (_player != null && _player.IsPlaying)
-                {
-                    _player.SetVolume(0.1f, 0.1f);
-                }
+                _player?.SetVolume(0.1f, 0.1f); // Przycisz (np. nawigacja mówi)
                 break;
         }
     }
 
-    // --- POZOSTAŁE METODY ---
-    private void InitializeMediaSession()
-    {
-        _mediaSession = new MediaSession(_context, "RadioVolnaSession");
-        _mediaSession.SetCallback(new MediaSessionCallback(this));
-        _mediaSession.SetFlags(MediaSessionFlags.HandlesMediaButtons | MediaSessionFlags.HandlesTransportControls);
-        _mediaSession.Active = true;
-    }
+    // --- ZARZĄDZANIE BLOKADAMI (Keep Alive) ---
 
-    private void CreateNotificationChannel()
+    private void AcquireLocks()
     {
-        if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
+        // 1. Wifi Lock (żeby nie zrywało neta)
+        try
         {
-            var channel = new NotificationChannel(ChannelId, "Radio Volna Sterowanie", NotificationImportance.Low)
+            if (_wifiLock == null)
             {
-                Description = "Pasek sterowania radiem"
-            };
-
-            _notificationManager = _context.GetSystemService(Context.NotificationService) as NotificationManager;
-            if (_notificationManager != null)
-            {
-                _notificationManager.CreateNotificationChannel(channel);
+                var wm = _context.GetSystemService(Context.WifiService) as WifiManager;
+                if (wm != null)
+                    _wifiLock = wm.CreateWifiLock(Android.Net.WifiMode.FullHighPerf, "RadioVolnaWifiLock");
             }
+            if (_wifiLock != null && !_wifiLock.IsHeld) _wifiLock.Acquire();
         }
+        catch { }
+
+        // 2. Power Lock (żeby CPU nie zasnął) - KLUCZOWE DLA TŁA
+        try
+        {
+            if (_powerWakeLock == null)
+            {
+                var pm = _context.GetSystemService(Context.PowerService) as PowerManager;
+                if (pm != null)
+                {
+                    // Partial Wake Lock pozwala wygasić ekran, ale CPU pracuje dalej
+                    _powerWakeLock = pm.NewWakeLock(WakeLockFlags.Partial, "RadioVolnaPowerLock");
+                }
+            }
+            if (_powerWakeLock != null && !_powerWakeLock.IsHeld) _powerWakeLock.Acquire();
+        }
+        catch { }
     }
 
-    private void RegisterNotificationReceiver()
+    private void ReleaseLocks()
     {
-        _receiver = new NotificationReceiver(this);
-        var filter = new IntentFilter();
-        filter.AddAction(ActionPlay);
-        filter.AddAction(ActionPause);
-        filter.AddAction(ActionStop);
-
-        if (Build.VERSION.SdkInt >= BuildVersionCodes.Tiramisu)
-        {
-            _context.RegisterReceiver(_receiver, filter, ReceiverFlags.Exported);
-        }
-        else
-        {
-            _context.RegisterReceiver(_receiver, filter);
-        }
+        try { if (_wifiLock != null && _wifiLock.IsHeld) _wifiLock.Release(); } catch { }
+        try { if (_powerWakeLock != null && _powerWakeLock.IsHeld) _powerWakeLock.Release(); } catch { }
     }
 
-    private void ReleaseWifiLock()
-    {
-        if (_wifiLock != null && _wifiLock.IsHeld)
-        {
-            _wifiLock.Release();
-            _wifiLock = null;
-        }
-    }
+    // --- ODTWARZANIE ---
 
     public void Play(string url, string stationName)
     {
         if (!RequestAudioFocus())
         {
-            StatusChanged?.Invoke(this, "Błąd: Nie można uzyskać dostępu do audio");
+            StatusChanged?.Invoke(this, "Błąd: Audio zajęte");
             return;
         }
 
-        StopPlayerOnly();
+        StopPlayerOnly(); // Czyści stary player i zwalnia blokady na chwilę
         _currentStationName = stationName;
 
+        // NATYCHMIAST pobierz blokady, zanim system pomyśli o uśpieniu
+        AcquireLocks();
+
         _player = new MediaPlayer();
+
+        // Wbudowana blokada playera (dodatkowe zabezpieczenie)
         _player.SetWakeMode(_context, WakeLockFlags.Partial);
 
         if (Build.VERSION.SdkInt >= BuildVersionCodes.Lollipop)
@@ -196,19 +188,14 @@ public class AudioService : Java.Lang.Object, IAudioService, AudioManager.IOnAud
 
         try
         {
-            var wifiManager = _context.GetSystemService(Context.WifiService) as WifiManager;
-            if (wifiManager != null)
-            {
-                // NAPRAWA BŁĘDU CS0103: Dodano pełną ścieżkę 'Android.Net.WifiMode'
-                _wifiLock = wifiManager.CreateWifiLock(Android.Net.WifiMode.FullHighPerf, "RadioVolnaLock");
-                _wifiLock.Acquire();
-            }
-        }
-        catch { }
+            var uri = Android.Net.Uri.Parse(url);
+            // Dodajemy nagłówki, żeby serwery RMF nas nie odrzucały
+            var headers = new Dictionary<string, string> {
+                { "User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" }
+            };
 
-        try
-        {
-            _player.SetDataSource(url);
+            _player.SetDataSource(_context, uri, headers);
+
             _player.Prepared += (s, e) =>
             {
                 _player.Start();
@@ -219,24 +206,19 @@ public class AudioService : Java.Lang.Object, IAudioService, AudioManager.IOnAud
 
             _player.Error += (s, e) =>
             {
-                StatusChanged?.Invoke(this, $"Błąd: {e.What}");
+                StatusChanged?.Invoke(this, $"Błąd radia ({e.What})");
                 IsPlayingChanged?.Invoke(this, false);
                 UpdateSystemMediaInfo(false);
-                ReleaseWifiLock();
+                ReleaseLocks(); // Zwolnij blokady przy błędzie
             };
 
             StatusChanged?.Invoke(this, "Łączenie...");
             _player.PrepareAsync();
         }
-        catch (Android.Util.AndroidRuntimeException ex)
+        catch (Exception ex)
         {
             StatusChanged?.Invoke(this, $"Błąd: {ex.Message}");
-            ReleaseWifiLock();
-        }
-        catch (Java.Lang.Exception ex)
-        {
-            StatusChanged?.Invoke(this, $"Błąd: {ex.Message}");
-            ReleaseWifiLock();
+            ReleaseLocks();
         }
     }
 
@@ -248,7 +230,7 @@ public class AudioService : Java.Lang.Object, IAudioService, AudioManager.IOnAud
             IsPlayingChanged?.Invoke(this, false);
             StatusChanged?.Invoke(this, "Wstrzymano");
             UpdateSystemMediaInfo(false);
-            ReleaseWifiLock();
+            ReleaseLocks(); // Nie trzymaj CPU włączonego na pauzie
         }
     }
 
@@ -258,21 +240,16 @@ public class AudioService : Java.Lang.Object, IAudioService, AudioManager.IOnAud
 
         if (_player != null && !_player.IsPlaying)
         {
+            AcquireLocks(); // Ponownie włącz blokady
             _player.Start();
             IsPlayingChanged?.Invoke(this, true);
-            StatusChanged?.Invoke(this, $"Połączenie nawiązane");
+            StatusChanged?.Invoke(this, $"Gra: {_currentStationName}");
             UpdateSystemMediaInfo(true);
-
-            try
-            {
-                var wifiManager = _context.GetSystemService(Context.WifiService) as WifiManager;
-                if (wifiManager != null && (_wifiLock == null || !_wifiLock.IsHeld))
-                {
-                    _wifiLock = wifiManager.CreateWifiLock(Android.Net.WifiMode.FullHighPerf, "RadioVolnaLock");
-                    _wifiLock.Acquire();
-                }
-            }
-            catch { }
+        }
+        else if (_player == null)
+        {
+            // Jeśli playera nie ma (został ubity), spróbuj zagrać od nowa (wymagałoby zapamiętania URL, tutaj prosta obsługa)
+            StatusChanged?.Invoke(this, "Wznowienie niemożliwe (Wybierz stację)");
         }
     }
 
@@ -291,17 +268,59 @@ public class AudioService : Java.Lang.Object, IAudioService, AudioManager.IOnAud
 
     private void StopPlayerOnly()
     {
-        ReleaseWifiLock();
+        ReleaseLocks(); // ZAWSZE zwalniaj blokady przy stopie
+
         if (_player != null)
         {
             try
             {
                 if (_player.IsPlaying) _player.Stop();
+            }
+            catch { }
+            try
+            {
                 _player.Release();
             }
             catch { }
             _player = null;
         }
+    }
+
+    // --- NOTYFIKACJE I MEDIA SESSION ---
+
+    private void InitializeMediaSession()
+    {
+        _mediaSession = new MediaSession(_context, "RadioVolnaSession");
+        _mediaSession.SetCallback(new MediaSessionCallback(this));
+        _mediaSession.SetFlags(MediaSessionFlags.HandlesMediaButtons | MediaSessionFlags.HandlesTransportControls);
+        _mediaSession.Active = true;
+    }
+
+    private void CreateNotificationChannel()
+    {
+        if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
+        {
+            var channel = new NotificationChannel(ChannelId, "Radio Volna Sterowanie", NotificationImportance.Low)
+            {
+                Description = "Pasek sterowania radiem"
+            };
+            _notificationManager = _context.GetSystemService(Context.NotificationService) as NotificationManager;
+            if (_notificationManager != null) _notificationManager.CreateNotificationChannel(channel);
+        }
+    }
+
+    private void RegisterNotificationReceiver()
+    {
+        _receiver = new NotificationReceiver(this);
+        var filter = new IntentFilter();
+        filter.AddAction(ActionPlay);
+        filter.AddAction(ActionPause);
+        filter.AddAction(ActionStop);
+
+        if (Build.VERSION.SdkInt >= BuildVersionCodes.Tiramisu)
+            _context.RegisterReceiver(_receiver, filter, ReceiverFlags.Exported);
+        else
+            _context.RegisterReceiver(_receiver, filter);
     }
 
     private void UpdateSystemMediaInfo(bool isPlaying)
@@ -311,17 +330,13 @@ public class AudioService : Java.Lang.Object, IAudioService, AudioManager.IOnAud
         var metadataBuilder = new MediaMetadata.Builder();
         metadataBuilder.PutString(MediaMetadata.MetadataKeyTitle, isPlaying ? _currentStationName : "Wstrzymano");
         metadataBuilder.PutString(MediaMetadata.MetadataKeyArtist, "Radio Volna");
-        metadataBuilder.PutString(MediaMetadata.MetadataKeyAlbum, "Radio Internetowe");
         metadataBuilder.PutBitmap(MediaMetadata.MetadataKeyAlbumArt, largeIcon);
-        metadataBuilder.PutBitmap(MediaMetadata.MetadataKeyArt, largeIcon);
         _mediaSession!.SetMetadata(metadataBuilder.Build());
 
         var stateBuilder = new PlaybackState.Builder();
         var state = isPlaying ? PlaybackStateCode.Playing : PlaybackStateCode.Paused;
-
         stateBuilder.SetActions(PlaybackState.ActionPlay | PlaybackState.ActionPause | PlaybackState.ActionStop);
         stateBuilder.SetState(state, PlaybackState.PlaybackPositionUnknown, 1.0f);
-
         _mediaSession.SetPlaybackState(stateBuilder.Build());
         _mediaSession.Active = true;
 
@@ -332,32 +347,27 @@ public class AudioService : Java.Lang.Object, IAudioService, AudioManager.IOnAud
         var pendingIntent = PendingIntent.GetBroadcast(_context, 0, intent, PendingIntentFlags.Immutable | PendingIntentFlags.UpdateCurrent);
 
         int iconBtn = isPlaying ? Android.Resource.Drawable.IcMediaPause : Android.Resource.Drawable.IcMediaPlay;
-        string title = isPlaying ? "Pauza" : "Graj";
+        string btnText = isPlaying ? "Pauza" : "Graj";
 
+        // Dodajemy Intencję otwierania aplikacji po kliknięciu w powiadomienie
         var openAppIntent = _context.PackageManager?.GetLaunchIntentForPackage(_context.PackageName ?? "");
         PendingIntent? contentIntent = null;
         if (openAppIntent != null)
         {
+            openAppIntent.SetFlags(ActivityFlags.ClearTop | ActivityFlags.SingleTop);
             contentIntent = PendingIntent.GetActivity(_context, 0, openAppIntent, PendingIntentFlags.Immutable);
         }
-
-        var mediaStyle = new Notification.MediaStyle();
-        mediaStyle.SetMediaSession(_mediaSession.SessionToken);
-        mediaStyle.SetShowActionsInCompactView(0);
 
         var builder = new Notification.Builder(_context, ChannelId)
             .SetSmallIcon(Android.Resource.Drawable.IcMediaPlay)
             .SetLargeIcon(largeIcon)
             .SetContentTitle("Radio Volna")
             .SetContentText(isPlaying ? _currentStationName : "Wstrzymano")
-            .SetStyle(mediaStyle)
-            .SetOngoing(isPlaying)
-            .AddAction(new Notification.Action(iconBtn, title, pendingIntent));
+            .SetStyle(new Notification.MediaStyle().SetMediaSession(_mediaSession.SessionToken).SetShowActionsInCompactView(0))
+            .SetOngoing(isPlaying) // To sprawia, że powiadomienia nie da się usunąć gdy gra
+            .AddAction(new Notification.Action(iconBtn, btnText, pendingIntent));
 
-        if (contentIntent != null)
-        {
-            builder.SetContentIntent(contentIntent);
-        }
+        if (contentIntent != null) builder.SetContentIntent(contentIntent);
 
         _notificationManager.Notify(NotificationId, builder.Build());
     }
@@ -368,7 +378,6 @@ public class AudioService : Java.Lang.Object, IAudioService, AudioManager.IOnAud
         private readonly AudioService _service;
         public NotificationReceiver() { }
         public NotificationReceiver(AudioService service) => _service = service;
-
         public override void OnReceive(Context? context, Intent? intent)
         {
             if (_service == null) return;
