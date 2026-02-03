@@ -13,20 +13,18 @@ namespace RadioVolna
         {
             base.OnCreate(savedInstanceState);
 
-            // --- KOD DO WYMUSZANIA BRAKU OGRANICZEŃ BATERII ---
             CheckBatteryOptimizations();
         }
 
         private void CheckBatteryOptimizations()
         {
-            if (Build.VERSION.SdkInt >= BuildVersionCodes.M) // Działa tylko na Android 6.0+
+            if (Build.VERSION.SdkInt >= BuildVersionCodes.M)
             {
                 var packageName = ApplicationContext.PackageName;
                 var pm = (PowerManager)GetSystemService(Context.PowerService);
 
                 if (pm != null && !pm.IsIgnoringBatteryOptimizations(packageName))
                 {
-                    // Jeśli aplikacja MA ograniczenia, poproś użytkownika o ich zdjęcie
                     var intent = new Intent();
                     intent.SetAction(Settings.ActionRequestIgnoreBatteryOptimizations);
                     intent.SetData(Android.Net.Uri.Parse("package:" + packageName));
