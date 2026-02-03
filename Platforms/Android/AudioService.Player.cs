@@ -1,15 +1,26 @@
 ﻿// Plik: Platforms/Android/AudioService.Player.cs
+// (To jest ten "Native Player" - MediaPlayer)
 using Android.Content;
 using Android.Media;
-using Android.Net.Wifi;
 using Android.OS;
+using System.Diagnostics;
+using System.Net.Http;
 
 namespace RadioVolna;
 
 public partial class AudioService
 {
-    private void InitializePlayer(string url)
+    // Logowanie
+    private void Log(string message)
     {
+        System.Diagnostics.Debug.WriteLine($"[RADIO_LOG] {message}");
+        Android.Util.Log.Info("RADIO_LOG", message);
+    }
+
+    // ZMIANA NAZWY: InitializePlayer -> InitializeNativePlayer
+    private void InitializeNativePlayer(string url)
+    {
+        Log("Inicjalizacja: Native MediaPlayer (Silnik lekki)");
         try
         {
             _player = new MediaPlayer();
@@ -34,64 +45,39 @@ public partial class AudioService
             _player.Prepared += (s, e) =>
             {
                 _player.Start();
-                RegisterNoisyReceiver();
+                _player.SetVolume(1.0f, 1.0f);
                 IsPlayingChanged?.Invoke(this, true);
                 StatusChanged?.Invoke(this, $"Gra: {_currentStationName}");
                 UpdateSystemMediaInfo(true);
             };
 
+            _player.Info += (s, e) =>
+            {
+                if (e.What == MediaInfo.BufferingStart) StatusChanged?.Invoke(this, "Buforowanie...");
+                else if (e.What == MediaInfo.BufferingEnd) StatusChanged?.Invoke(this, $"Gra: {_currentStationName}");
+            };
+
             _player.Error += (s, e) =>
             {
-                StatusChanged?.Invoke(this, $"Błąd radia: {e.What}");
-                IsPlayingChanged?.Invoke(this, false);
-                UpdateSystemMediaInfo(false);
-                ReleaseLocks();
+                if ((int)e.What != -38)
+                {
+                    Log($"Native Error: {(int)e.What}");
+                    StatusChanged?.Invoke(this, $"Błąd Native: {(int)e.What}");
+                    // W razie błędu native'a, można by tu dodać fallback do Exo, ale na razie tylko stop
+                    IsPlayingChanged?.Invoke(this, false);
+                }
             };
 
-            _player.Completion += (s, e) =>
-            {
-                IsPlayingChanged?.Invoke(this, false);
-                StatusChanged?.Invoke(this, "Zakończono");
-                UpdateSystemMediaInfo(false);
-                ReleaseLocks();
-            };
-
-            StatusChanged?.Invoke(this, "Łączenie...");
             _player.PrepareAsync();
         }
         catch (Exception ex)
         {
-            StatusChanged?.Invoke(this, $"Błąd: {ex.Message}");
-            ReleaseLocks();
+            Log($"Native Exception: {ex.Message}");
         }
     }
 
-    private void PausePlayerInternal()
+    private void StopNativePlayer()
     {
-        if (_player != null)
-        {
-            try { if (_player.IsPlaying) _player.Pause(); } catch { }
-        }
-    }
-
-    private bool ResumePlayerInternal()
-    {
-        if (_player != null)
-        {
-            try
-            {
-                if (!_player.IsPlaying) _player.Start();
-                return true;
-            }
-            catch { return false; }
-        }
-        return false;
-    }
-
-    private void StopPlayerOnly()
-    {
-        ReleaseLocks();
-        UnregisterNoisyReceiver();
         if (_player != null)
         {
             try { if (_player.IsPlaying) _player.Stop(); } catch { }
@@ -100,35 +86,28 @@ public partial class AudioService
         }
     }
 
-    // --- ZARZĄDZANIE BLOKADAMI (BATERIA / WIFI) ---
-    private void AcquireLocks()
+    // Metoda sprawdzająca format (zwraca teraz Task<string>)
+    private async Task<string> CheckStreamFormatAsync(string url)
     {
+        Log($"Sprawdzam nagłówki: {url}");
         try
         {
-            if (_wifiLock == null)
+            using (var client = new HttpClient())
             {
-                var wm = _context.GetSystemService(Context.WifiService) as WifiManager;
-                if (wm != null) _wifiLock = wm.CreateWifiLock(Android.Net.WifiMode.FullHighPerf, "RadioVolnaWifiLock");
-            }
-            if (_wifiLock != null && !_wifiLock.IsHeld) _wifiLock.Acquire();
-        }
-        catch { }
+                client.Timeout = TimeSpan.FromSeconds(5); // Szybki timeout
+                client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0");
+                var request = new HttpRequestMessage(HttpMethod.Head, url);
+                var response = await client.SendAsync(request);
 
-        try
-        {
-            if (_powerWakeLock == null)
-            {
-                var pm = _context.GetSystemService(Context.PowerService) as PowerManager;
-                if (pm != null) _powerWakeLock = pm.NewWakeLock(WakeLockFlags.Partial, "RadioVolnaPowerLock");
+                if (response.Content.Headers.ContentType != null)
+                {
+                    string mime = response.Content.Headers.ContentType.MediaType;
+                    Log($"Wykryto format: {mime}");
+                    return mime;
+                }
             }
-            if (_powerWakeLock != null && !_powerWakeLock.IsHeld) _powerWakeLock.Acquire();
         }
-        catch { }
-    }
-
-    private void ReleaseLocks()
-    {
-        try { if (_wifiLock != null && _wifiLock.IsHeld) _wifiLock.Release(); } catch { }
-        try { if (_powerWakeLock != null && _powerWakeLock.IsHeld) _powerWakeLock.Release(); } catch { }
+        catch (Exception ex) { Log($"Błąd sprawdzania: {ex.Message}"); }
+        return "unknown";
     }
 }
