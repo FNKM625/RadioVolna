@@ -11,10 +11,8 @@ namespace RadioVolna;
 public partial class AudioService : Java.Lang.Object, IAudioService, AudioManager.IOnAudioFocusChangeListener
 {
     private Context _context;
-    // Native player
     private MediaPlayer? _player;
 
-    // Flaga: Czy używamy aktualnie ExoPlayera?
     private bool _isUsingExoPlayer = false;
 
     private AudioManager? _audioManager;
@@ -49,27 +47,23 @@ public partial class AudioService : Java.Lang.Object, IAudioService, AudioManage
         _currentStationName = stationName;
         StatusChanged?.Invoke(this, "Sprawdzam strumień...");
 
-        // 1. Zatrzymaj wszystko co grało wcześniej
         StopInternal();
         AcquireLocks();
 
-        // 2. Sprawdź format (Native czy Exo?)
         string mimeType = await CheckStreamFormatAsync(url);
         bool isMp3 = mimeType.Equals("audio/mpeg", StringComparison.OrdinalIgnoreCase) ||
                      mimeType.Equals("audio/mp3", StringComparison.OrdinalIgnoreCase) ||
                      mimeType.Equals("text/plain", StringComparison.OrdinalIgnoreCase);
 
-        // 3. Wybierz silnik
         if (isMp3)
         {
             _isUsingExoPlayer = false;
-            InitializeNativePlayer(url); // Użyj MediaPlayer
+            InitializeNativePlayer(url);
         }
         else
         {
-            // AAC+, OGG, lub nieznany -> bezpieczniej użyć ExoPlayera
             _isUsingExoPlayer = true;
-            InitializeExoPlayer(url); // Użyj ExoPlayer
+            InitializeExoPlayer(url);
         }
 
         RegisterNoisyReceiver();
@@ -100,7 +94,7 @@ public partial class AudioService : Java.Lang.Object, IAudioService, AudioManage
         else
         {
             if (_player != null && !_player.IsPlaying) _player.Start();
-            else Play("", _currentStationName); // Fallback
+            else Play("", _currentStationName);
         }
 
         IsPlayingChanged?.Invoke(this, true);
@@ -158,5 +152,23 @@ public partial class AudioService : Java.Lang.Object, IAudioService, AudioManage
     {
         try { if (_wifiLock != null && _wifiLock.IsHeld) _wifiLock.Release(); } catch { }
         try { if (_powerWakeLock != null && _powerWakeLock.IsHeld) _powerWakeLock.Release(); } catch { }
+    }
+
+    private int _retryCount = 0;
+    private const int MaxRetries = 30;
+
+    private async void AttemptReconnect()
+    {
+        _retryCount++;
+        System.Diagnostics.Debug.WriteLine($"[AudioService] Utrata sieci. Próba {_retryCount}/{MaxRetries}...");
+        StatusChanged?.Invoke(this, $"Słaby sygnał... Łączę ({_retryCount}/{MaxRetries})");
+
+        await Task.Delay(3000);
+
+        if (_exoPlayer != null)
+        {
+            _exoPlayer.Prepare();
+            _exoPlayer.PlayWhenReady = true;
+        }
     }
 }

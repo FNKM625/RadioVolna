@@ -22,6 +22,7 @@ public partial class AudioService
                     _service.StatusChanged?.Invoke(_service, "Buforowanie...");
                     break;
                 case 3:
+                    _service._retryCount = 0;
                     _service.StatusChanged?.Invoke(_service, $"Gra: {_service._currentStationName}");
                     _service.IsPlayingChanged?.Invoke(_service, true);
                     break;
@@ -33,12 +34,30 @@ public partial class AudioService
 
         public void OnPlayerError(PlaybackException? error)
         {
-            _service.Log($"Exo Error: {error?.ErrorCodeName}");
-            if (error?.ErrorCodeName != "ERROR_CODE_IO_NETWORK_CONNECTION_FAILED")
+            HandleError(error);
+        }
+
+        public void OnPlayerErrorChanged(PlaybackException? error)
+        {
+            if (error != null)
             {
-                _service.StatusChanged?.Invoke(_service, "Błąd strumienia");
+                HandleError(error);
             }
-            _service.IsPlayingChanged?.Invoke(_service, false);
+        }
+
+        private void HandleError(PlaybackException? error)
+        {
+            if (_service._retryCount < AudioService.MaxRetries)
+            {
+                _service.AttemptReconnect();
+            }
+            else
+            {
+                _service.Log($"Exo Error: {error?.ErrorCodeName}");
+                _service.StatusChanged?.Invoke(_service, "Brak sieci / Błąd");
+                _service.IsPlayingChanged?.Invoke(_service, false);
+                _service._retryCount = 0;
+            }
         }
 
         public void OnMetadata(Metadata metadata)
@@ -74,5 +93,6 @@ public partial class AudioService
         public void OnDeviceVolumeChanged(int volume, bool muted) { }
         public void OnRenderedFirstFrame() { }
         public void OnSurfaceSizeChanged(int width, int height) { }
+        public void OnAudioAttributesChanged(AudioAttributes audioAttributes) { }
     }
 }

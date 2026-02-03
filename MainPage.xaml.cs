@@ -15,8 +15,30 @@ public partial class MainPage : ContentPage
         InitializeComponent();
         _audioService = audioService;
         StationsList.ItemsSource = Stations;
+        _audioService.StatusChanged += OnStatusChanged;
 
         LoadStations();
+    }
+
+    private void OnStatusChanged(object sender, string message)
+    {
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            StatusLabel.Text = message;
+
+            if (message.Contains("Błąd") || message.Contains("Brak") || message.Contains("Słaby"))
+            {
+                StatusLabel.TextColor = Colors.Orange;
+            }
+            else if (message.Contains("Gra"))
+            {
+                StatusLabel.TextColor = Colors.LightGreen;
+            }
+            else
+            {
+                StatusLabel.TextColor = Colors.White;
+            }
+        });
     }
 
     private async void LoadStations()
