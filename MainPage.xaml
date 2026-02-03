@@ -210,16 +210,24 @@
                     <RoundRectangle CornerRadius="20"/>
                 </Border.StrokeShape>
 
-                <Grid RowDefinitions="Auto, *, Auto" Padding="20">
-                    <Label x:Name="AutoStartHeaderLabel" 
-                           Text="Wybierz do autostartu" 
-                           TextColor="White" 
-                           FontSize="20" 
-                           FontAttributes="Bold" 
-                           HorizontalOptions="Center" 
-                           Margin="0,0,0,15"/>
+                <Grid RowDefinitions="Auto, Auto, *, Auto" RowSpacing="10" Padding="20">
 
-                    <CollectionView Grid.Row="1" 
+                    <Label Grid.Row="0"
+                           Text="Stacja na autostarcie:" 
+                           TextColor="Gray" 
+                           FontSize="14" 
+                           HorizontalOptions="Center"/>
+
+                    <Label Grid.Row="1"
+                           x:Name="CurrentAutoStartLabel"
+                           Text="Nie wybrano stacji"
+                           TextColor="#03DAC6"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           HorizontalOptions="Center"
+                           Margin="0,0,0,10"/>
+
+                    <CollectionView Grid.Row="2" 
                                     x:Name="AutoStartList" 
                                     SelectionMode="Single" 
                                     SelectionChanged="OnAutoStartStationSelected">
@@ -229,27 +237,56 @@
                                         BackgroundColor="#2C2C2C" 
                                         Padding="15" 
                                         Margin="0,5">
-
                                     <Border.StrokeShape>
                                         <RoundRectangle CornerRadius="8" />
                                     </Border.StrokeShape>
-                                    <Label Text="{Binding DisplayName}" 
-                                           TextColor="White" 
-                                           FontSize="16" 
-                                           VerticalOptions="Center" />
+
+                                    <Grid ColumnDefinitions="*, Auto">
+                                        <Label Grid.Column="0"
+                                               Text="{Binding DisplayName}" 
+                                               TextColor="White" 
+                                               FontSize="16" 
+                                               VerticalOptions="Center" />
+                                        <Label Grid.Column="1"
+                                               Text="❤"
+                                               TextColor="#FF0000"
+                                               IsVisible="{Binding IsFavorite}"
+                                               FontSize="16"
+                                               VerticalOptions="Center"/>
+                                    </Grid>
                                 </Border>
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
                     </CollectionView>
 
-                    <Button Grid.Row="2" 
+                    <Button Grid.Row="3" 
                             Text="Anuluj" 
                             Clicked="OnCloseAutoStartClicked" 
                             BackgroundColor="Transparent" 
                             TextColor="#FF5555" 
-                            Margin="0,15,0,0"/>
+                            Margin="0,10,0,0"/>
                 </Grid>
             </Border>
         </Grid>
+
+        <Border x:Name="NotificationBadge"
+            VerticalOptions="End"
+            HorizontalOptions="Center"
+            Margin="0,0,0,80" 
+            Padding="15,10"
+            BackgroundColor="#333333"
+            StrokeShape="RoundRectangle 20"
+            Opacity="0"
+            InputTransparent="True"
+            IsVisible="False">
+
+            <Label x:Name="NotificationLabel"
+               Text="Dodano do autostartu"
+               TextColor="White"
+               FontSize="14"
+               FontAttributes="Bold"
+               HorizontalOptions="Center"/>
+        </Border>
+
     </Grid>
 </ContentPage>

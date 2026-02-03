@@ -70,18 +70,37 @@ public partial class MainPage : ContentPage
     private void OnAutostartOptionClicked(object sender, EventArgs e)
     {
         SettingsOverlay.IsVisible = false;
-        var favorites = Stations.Where(s => s.IsFavorite).ToList();
 
-        if (favorites.Count > 0)
+        string currentAutoStartName = Preferences.Get("AutoStartStationName", null);
+
+        if (string.IsNullOrEmpty(currentAutoStartName))
         {
-            AutoStartList.ItemsSource = favorites;
-            AutoStartHeaderLabel.Text = "Wybierz z ulubionych";
+            CurrentAutoStartLabel.Text = "Nie wybrano stacji";
+            CurrentAutoStartLabel.TextColor = Colors.Gray;
         }
         else
         {
-            AutoStartList.ItemsSource = Stations;
-            AutoStartHeaderLabel.Text = "Wybierz stację (Brak ulubionych)";
+            CurrentAutoStartLabel.Text = currentAutoStartName;
+            CurrentAutoStartLabel.TextColor = Color.FromArgb("#03DAC6");
         }
+
+        var filteredFavorites = Stations
+            .Where(s => s.IsFavorite && s.DisplayName != currentAutoStartName)
+            .ToList();
+
+        if (filteredFavorites.Count > 0)
+        {
+            AutoStartList.ItemsSource = filteredFavorites;
+        }
+        else
+        {
+            var allStationsFiltered = Stations
+                .Where(s => s.DisplayName != currentAutoStartName)
+                .ToList();
+
+            AutoStartList.ItemsSource = allStationsFiltered;
+        }
+
         AutoStartOverlay.IsVisible = true;
     }
 
@@ -91,10 +110,10 @@ public partial class MainPage : ContentPage
         {
             Preferences.Set("AutoStartStationName", selectedStation.DisplayName);
 
-            await DisplayAlert("Sukces", $"Ustawiono autostart na:\n{selectedStation.DisplayName}", "OK");
-
-            AutoStartOverlay.IsVisible = false;
             AutoStartList.SelectedItem = null;
+            AutoStartOverlay.IsVisible = false;
+
+            await ShowNotificationAsync($"Autostart: {selectedStation.DisplayName}");
         }
     }
 
@@ -180,5 +199,19 @@ public partial class MainPage : ContentPage
     {
         _audioService.Stop();
         System.Diagnostics.Process.GetCurrentProcess().Kill();
+    }
+
+    private async Task ShowNotificationAsync(string message)
+    {
+        NotificationLabel.Text = message;
+        NotificationBadge.IsVisible = true;
+        NotificationBadge.InputTransparent = false;
+
+        await NotificationBadge.FadeTo(1, 250, Easing.CubicOut);
+        await Task.Delay(2000);
+        await NotificationBadge.FadeTo(0, 250, Easing.CubicIn);
+
+        NotificationBadge.IsVisible = false;
+        NotificationBadge.InputTransparent = true;
     }
 }

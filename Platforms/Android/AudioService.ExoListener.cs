@@ -14,7 +14,6 @@ public partial class AudioService
             _service = service;
         }
 
-        // --- 1. GŁÓWNA LOGIKA STANÓW ---
         public void OnPlaybackStateChanged(int playbackState)
         {
             switch (playbackState)
@@ -42,7 +41,6 @@ public partial class AudioService
             _service.IsPlayingChanged?.Invoke(_service, false);
         }
 
-        // --- TO JEST METODA, KTÓREJ BRAKOWAŁO (NAPRAWA BŁĘDU AbstractMethodError) ---
         public void OnMetadata(Metadata metadata)
         {
             _service.Log("Otrzymano metadane (tytuł/artysta).");
@@ -52,8 +50,6 @@ public partial class AudioService
         {
             _service.Log("Zmieniono ścieżki audio.");
         }
-
-        // --- 2. POZOSTAŁE METODY WYMAGANE PRZEZ INTERFEJS JAVA ---
 
         public void OnTimelineChanged(Timeline timeline, int reason) { }
         public void OnMediaItemTransition(MediaItem? mediaItem, int reason) { }
@@ -70,8 +66,6 @@ public partial class AudioService
         public void OnMediaMetadataChanged(MediaMetadata mediaMetadata) { }
         public void OnPlaylistMetadataChanged(MediaMetadata mediaMetadata) { }
         public void OnEvents(IPlayer player, PlayerEvents playerEvents) { }
-
-        // Dodajmy jeszcze te, które mogą wystąpić przy wideo/napisach (na wszelki wypadek):
         public void OnCues(AndroidX.Media3.Common.Text.CueGroup cueGroup) { }
         public void OnCues(System.Collections.Generic.IList<AndroidX.Media3.Common.Text.Cue> cues) { }
         public void OnVideoSizeChanged(VideoSize videoSize) { }

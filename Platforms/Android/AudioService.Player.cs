@@ -94,7 +94,7 @@ public partial class AudioService
         {
             using (var client = new HttpClient())
             {
-                client.Timeout = TimeSpan.FromSeconds(5); // Szybki timeout
+                client.Timeout = TimeSpan.FromSeconds(5);
                 client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0");
                 var request = new HttpRequestMessage(HttpMethod.Head, url);
                 var response = await client.SendAsync(request);
