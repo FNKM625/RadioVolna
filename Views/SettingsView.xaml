@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="RadioVolna.Views.SettingsView"
+             xmlns:helpers="clr-namespace:RadioVolna.Resources"
+             BackgroundColor="{AppThemeBinding Light={StaticResource CardLight}, Dark={StaticResource CardDark}}">
+
+    <Border BackgroundColor="{AppThemeBinding Light={StaticResource CardLight}, Dark={StaticResource CardDark}}"
+            StrokeThickness="0"
+            VerticalOptions="Center"
+            HorizontalOptions="Center"
+            WidthRequest="300">
+
+        <Border.StrokeShape>
+            <RoundRectangle CornerRadius="20"/>
+        </Border.StrokeShape>
+
+        <VerticalStackLayout Padding="20" Spacing="15">
+            <VerticalStackLayout.Resources>
+                <Style TargetType="Button">
+                    <Setter Property="CornerRadius" Value="10" />
+                    <Setter Property="HeightRequest" Value="50" />
+                    <Setter Property="FontAttributes" Value="Bold" />
+                    <Setter Property="BorderColor" Value="Orange" />
+
+                    <Setter Property="BorderWidth" Value="1" />
+
+                    <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource CardLight}, Dark={StaticResource CardDark}}" />
+                    <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}" />
+                </Style>
+            </VerticalStackLayout.Resources>
+
+
+            <Label Text="{helpers:Translate SettingsTitle}"
+                   TextColor="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}"
+                   FontSize="22"
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center"
+                   Margin="0,0,0,10"/>
+
+            <Button Text="{helpers:Translate BtnAddAutoStart}"
+                    Clicked="OnAutostartClicked"/>
+
+            <Button Text="{helpers:Translate BtnLanguage}"
+                    Clicked="OnLanguageClicked"/>
+
+            <Button Text="{helpers:Translate BtnTheme}"
+                    Clicked="OnThemeClicked"/>
+
+            <Button Text="{helpers:Translate BtnAbout}"
+                    Clicked="OnAboutClicked"
+                    Margin="0,10,0,0"/>
+
+            <Button Text="{helpers:Translate BtnClose}"
+                    Clicked="OnCloseClicked"
+                    BackgroundColor="Transparent"
+                    TextColor="#FF5555"
+                    Margin="0,5,0,0"/>
+        </VerticalStackLayout>
+    </Border>
+</ContentView>

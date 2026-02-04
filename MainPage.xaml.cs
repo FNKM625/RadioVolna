@@ -1,24 +1,60 @@
 ﻿using System.Collections.ObjectModel;
-using System.Net.Http.Json;
+using RadioVolna.Services;
+using RadioVolna.Resources;
+using System.ComponentModel;
 
 namespace RadioVolna;
 
 public partial class MainPage : ContentPage
 {
     private readonly IAudioService _audioService;
+
+    private readonly StationService _stationService = new StationService();
+    private readonly StationManager _stationManager = new StationManager();
+
+    private bool _isPlaying = false;
+
     public ObservableCollection<Station> Stations { get; set; } = new();
-    private readonly HttpClient _httpClient = new HttpClient();
-    private const string GitHubJsonUrl = "https://raw.githubusercontent.com/FNKM625/RadioVolnaData/refs/heads/main/station.json";
 
     public MainPage(IAudioService audioService)
     {
         InitializeComponent();
+
         _audioService = audioService;
         StationsList.ItemsSource = Stations;
         _audioService.StatusChanged += OnStatusChanged;
+        LocalizationResourceManager.Instance.PropertyChanged += OnLanguageChanged;
 
         LoadStations();
     }
+
+    private async void LoadStations()
+    {
+        var loadedStations = await _stationService.GetStationsAsync();
+
+        if (loadedStations.Count == 0)
+        {
+            string title = LocalizationResourceManager.Instance["TitleError"];
+            string msg = LocalizationResourceManager.Instance["MsgStationListError"];
+            string ok = LocalizationResourceManager.Instance["BtnOk"];
+            await DisplayAlert(title, msg, ok);
+            return;
+        }
+
+        _stationManager.MergeWithFavorites(loadedStations, Stations);
+
+        CheckAndRunAutoStart();
+    }
+
+    private void OnFavoriteClicked(object sender, EventArgs e)
+    {
+        if (sender is Button btn && btn.CommandParameter is Station station)
+        {
+            _stationManager.ToggleFavorite(station, Stations);
+        }
+    }
+
+    // --- PONIŻEJ TYLKO OBSŁUGA UI I ODTWARZANIA ---
 
     private void OnStatusChanged(object sender, string message)
     {
@@ -26,102 +62,86 @@ public partial class MainPage : ContentPage
         {
             StatusLabel.Text = message;
 
-            if (message.Contains("Błąd") || message.Contains("Brak") || message.Contains("Słaby"))
-            {
+            bool isError = message.Contains("Błąd") || message.Contains("Error") || message.Contains("Ошибка") ||
+                           message.Contains("Brak") || message.Contains("Słaby");
+
+            bool isPlaying = message.Contains("Gra") || message.Contains("Playing") || message.Contains("Играет");
+
+            if (isError)
                 StatusLabel.TextColor = Colors.Orange;
-            }
-            else if (message.Contains("Gra"))
-            {
+            else if (isPlaying)
                 StatusLabel.TextColor = Colors.LightGreen;
-            }
             else
-            {
-                StatusLabel.TextColor = Colors.White;
-            }
+                StatusLabel.TextColor = Colors.DarkGray;
         });
     }
 
-    private async void LoadStations()
-    {
-        try
-        {
-            var loadedStations = await _httpClient.GetFromJsonAsync<List<Station>>(GitHubJsonUrl);
-            if (loadedStations == null) return;
-
-            string favoritesString = Preferences.Get("FavoritesList", "");
-
-            Stations.Clear();
-            foreach (var station in loadedStations)
-            {
-                station.DisplayName = station.Name;
-                if (favoritesString.Contains(station.DisplayName))
-                {
-                    station.IsFavorite = true;
-                }
-                Stations.Add(station);
-            }
-            SortStations();
-            CheckAndRunAutoStart();
-        }
-        catch (Exception ex)
-        {
-            await DisplayAlert("Info", "Błąd ładowania: " + ex.Message, "OK");
-        }
-    }
-
-    // --- LOGIKA URUCHAMIANIA PRZY STARCIE ---
     private async void CheckAndRunAutoStart()
     {
         string autoStartName = Preferences.Get("AutoStartStationName", null);
-
         if (!string.IsNullOrEmpty(autoStartName))
         {
             var station = Stations.FirstOrDefault(s => s.DisplayName == autoStartName);
-
             if (station != null)
             {
                 await Task.Delay(500);
                 PlayStation(station);
-                StatusLabel.Text = $"Autostart: {station.DisplayName}";
+
+                string prefix = LocalizationResourceManager.Instance["MsgAutoStartPrefix"];
+                StatusLabel.Text = $"{prefix} {station.DisplayName}";
             }
         }
     }
 
-    // --- OBSŁUGA AUTOSTARTU (Z MENU USTAWIEŃ) ---
+    private void PlayStation(Station station)
+    {
+        _audioService.Play(station.Url, station.DisplayName);
+        CurrentStationLabel.Text = station.DisplayName;
 
+        StatusLabel.Text = LocalizationResourceManager.Instance["StatusPlayingGeneric"];
+        StatusLabel.TextColor = Colors.LightGreen;
+
+        PlayPauseBtn.IsEnabled = true;
+
+        _isPlaying = true;
+        UpdatePlayPauseText();
+    }
+
+    private void OnPlayPauseClicked(object sender, EventArgs e)
+    {
+        if (_isPlaying)
+        {
+            _audioService.Pause();
+            _isPlaying = false;
+
+            StatusLabel.Text = LocalizationResourceManager.Instance["NotifPaused"];
+            StatusLabel.TextColor = Colors.Orange;
+        }
+        else
+        {
+            _audioService.Resume();
+            _isPlaying = true;
+
+            StatusLabel.Text = LocalizationResourceManager.Instance["StatusPlayingGeneric"];
+            StatusLabel.TextColor = Colors.LightGreen;
+        }
+
+        UpdatePlayPauseText();
+    }
+
+    // --- UI EVENT HANDLERS ---
     private void OnAutostartOptionClicked(object sender, EventArgs e)
     {
-        SettingsOverlay.IsVisible = false;
-
+        SettingsOverlayContainer.IsVisible = false;
         string currentAutoStartName = Preferences.Get("AutoStartStationName", null);
 
-        if (string.IsNullOrEmpty(currentAutoStartName))
-        {
-            CurrentAutoStartLabel.Text = "Nie wybrano stacji";
-            CurrentAutoStartLabel.TextColor = Colors.Gray;
-        }
-        else
-        {
-            CurrentAutoStartLabel.Text = currentAutoStartName;
-            CurrentAutoStartLabel.TextColor = Color.FromArgb("#03DAC6");
-        }
+        string noStation = LocalizationResourceManager.Instance["MsgNoStationSelected"];
 
-        var filteredFavorites = Stations
-            .Where(s => s.IsFavorite && s.DisplayName != currentAutoStartName)
-            .ToList();
+        CurrentAutoStartLabel.Text = string.IsNullOrEmpty(currentAutoStartName) ? noStation : currentAutoStartName;
+        CurrentAutoStartLabel.TextColor = string.IsNullOrEmpty(currentAutoStartName) ? Colors.Gray : Color.FromArgb("#03DAC6");
 
-        if (filteredFavorites.Count > 0)
-        {
-            AutoStartList.ItemsSource = filteredFavorites;
-        }
-        else
-        {
-            var allStationsFiltered = Stations
-                .Where(s => s.DisplayName != currentAutoStartName)
-                .ToList();
-
-            AutoStartList.ItemsSource = allStationsFiltered;
-        }
+        var filteredList = Stations.Where(s => s.DisplayName != currentAutoStartName).OrderByDescending(s => s.IsFavorite).ToList();
+        AutoStartList.ItemsSource = filteredList;
 
         AutoStartOverlay.IsVisible = true;
     }
@@ -131,28 +151,12 @@ public partial class MainPage : ContentPage
         if (e.CurrentSelection.FirstOrDefault() is Station selectedStation)
         {
             Preferences.Set("AutoStartStationName", selectedStation.DisplayName);
-
             AutoStartList.SelectedItem = null;
             AutoStartOverlay.IsVisible = false;
 
-            await ShowNotificationAsync($"Autostart: {selectedStation.DisplayName}");
+            string prefix = LocalizationResourceManager.Instance["MsgAutoStartPrefix"];
+            await ShowNotificationAsync($"{prefix} {selectedStation.DisplayName}");
         }
-    }
-
-    private void OnCloseAutoStartClicked(object sender, EventArgs e)
-    {
-        AutoStartOverlay.IsVisible = false;
-    }
-
-
-    private void PlayStation(Station station)
-    {
-        _audioService.Play(station.Url, station.DisplayName);
-        CurrentStationLabel.Text = station.DisplayName;
-        StatusLabel.Text = "Odtwarzanie...";
-        StatusLabel.TextColor = Colors.LightGreen;
-        PlayPauseBtn.IsEnabled = true;
-        PlayPauseBtn.Text = "⏸ PAUZA";
     }
 
     private void OnStationSelected(object sender, SelectionChangedEventArgs e)
@@ -165,56 +169,21 @@ public partial class MainPage : ContentPage
         }
     }
 
-    private void OnFavoriteClicked(object sender, EventArgs e)
-    {
-        if (sender is Button btn && btn.CommandParameter is Station station)
-        {
-            station.IsFavorite = !station.IsFavorite;
-            SaveFavorites();
-            SortStations();
-        }
-    }
-
-    private void SaveFavorites()
-    {
-        var favNames = Stations.Where(s => s.IsFavorite).Select(s => s.DisplayName);
-        Preferences.Set("FavoritesList", string.Join("|", favNames));
-    }
-
-    private void SortStations()
-    {
-        var sortedList = Stations.OrderByDescending(s => s.IsFavorite).ThenBy(s => s.DisplayName).ToList();
-        Stations.Clear();
-        foreach (var s in sortedList) Stations.Add(s);
-    }
-
-    // --- OBSŁUGA UI ---
-    private void OnSettingsClicked(object sender, EventArgs e) => SettingsOverlay.IsVisible = true;
-    private void OnCloseSettingsClicked(object sender, EventArgs e) => SettingsOverlay.IsVisible = false;
+    private void OnCloseAutoStartClicked(object sender, EventArgs e) => AutoStartOverlay.IsVisible = false;
     private void OnOpenListClicked(object sender, EventArgs e) => StationSelectionOverlay.IsVisible = true;
     private void OnCloseListClicked(object sender, EventArgs e) => StationSelectionOverlay.IsVisible = false;
+    private void OnSettingsClicked(object sender, EventArgs e) => SettingsOverlayContainer.IsVisible = true;
+    private void OnCloseSettingsClicked(object sender, EventArgs e) => SettingsOverlayContainer.IsVisible = false;
 
-    private async void OnSettingsOptionClicked(object sender, EventArgs e)
+    private async void OnAboutClicked(object sender, EventArgs e)
     {
-        if (sender is Button btn) { await btn.FadeTo(0.5, 100); await btn.FadeTo(1.0, 100); }
-    }
+        string v = AppInfo.Current.VersionString;
 
-    private void OnPlayPauseClicked(object sender, EventArgs e)
-    {
-        if (PlayPauseBtn.Text.Contains("PAUZA"))
-        {
-            _audioService.Pause();
-            PlayPauseBtn.Text = "▶ WZNÓW";
-            StatusLabel.Text = "Wstrzymano";
-            StatusLabel.TextColor = Colors.Orange;
-        }
-        else
-        {
-            _audioService.Resume();
-            PlayPauseBtn.Text = "⏸ PAUZA";
-            StatusLabel.Text = "Odtwarzanie...";
-            StatusLabel.TextColor = Colors.LightGreen;
-        }
+        string title = LocalizationResourceManager.Instance["BtnAbout"].Replace("ℹ️ ", "");
+        string bodyFormat = LocalizationResourceManager.Instance["MsgAboutBody"];
+        string close = LocalizationResourceManager.Instance["BtnClose"];
+
+        await DisplayAlert(title, string.Format(bodyFormat, v), close);
     }
 
     private void OnExitClicked(object sender, EventArgs e)
@@ -228,12 +197,20 @@ public partial class MainPage : ContentPage
         NotificationLabel.Text = message;
         NotificationBadge.IsVisible = true;
         NotificationBadge.InputTransparent = false;
-
-        await NotificationBadge.FadeTo(1, 250, Easing.CubicOut);
+        await NotificationBadge.FadeTo(1, 250);
         await Task.Delay(2000);
-        await NotificationBadge.FadeTo(0, 250, Easing.CubicIn);
-
+        await NotificationBadge.FadeTo(0, 250);
         NotificationBadge.IsVisible = false;
         NotificationBadge.InputTransparent = true;
+    }
+    private void OnLanguageChanged(object sender, PropertyChangedEventArgs e)
+    {
+        UpdatePlayPauseText();
+    }
+
+    private void UpdatePlayPauseText()
+    {
+        string key = _isPlaying ? "BtnPause" : "BtnResume";
+        PlayPauseBtn.Text = LocalizationResourceManager.Instance[key];
     }
 }

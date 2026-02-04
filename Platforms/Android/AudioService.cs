@@ -5,6 +5,7 @@ using Android.Media;
 using Android.Media.Session;
 using Android.Net.Wifi;
 using Android.OS;
+using RadioVolna.Resources;
 
 namespace RadioVolna;
 
@@ -12,6 +13,7 @@ public partial class AudioService : Java.Lang.Object, IAudioService, AudioManage
 {
     private Context _context;
     private MediaPlayer? _player;
+    private string _lastUrl = "";
 
     private bool _isUsingExoPlayer = false;
 
@@ -42,10 +44,16 @@ public partial class AudioService : Java.Lang.Object, IAudioService, AudioManage
     // --- LOGIKA HYBRYDOWA ---
     public async void Play(string url, string stationName)
     {
-        if (!RequestAudioFocus()) { StatusChanged?.Invoke(this, "Audio zajęte"); return; }
+        _lastUrl = url;
+
+        if (!RequestAudioFocus())
+        {
+            StatusChanged?.Invoke(this, LocalizationResourceManager.Instance["StatusAudioBusy"]);
+            return;
+        }
 
         _currentStationName = stationName;
-        StatusChanged?.Invoke(this, "Sprawdzam strumień...");
+        StatusChanged?.Invoke(this, LocalizationResourceManager.Instance["StatusCheckingStream"]);
 
         StopInternal();
         AcquireLocks();
@@ -71,11 +79,14 @@ public partial class AudioService : Java.Lang.Object, IAudioService, AudioManage
 
     public void Pause()
     {
+        _shouldBePlaying = false;
+
         if (_isUsingExoPlayer) PauseExoPlayer();
         else if (_player != null && _player.IsPlaying) _player.Pause();
 
         IsPlayingChanged?.Invoke(this, false);
-        StatusChanged?.Invoke(this, "Wstrzymano");
+        StatusChanged?.Invoke(this, LocalizationResourceManager.Instance["NotifPaused"]);
+
         UpdateSystemMediaInfo(false);
         ReleaseLocks();
         UnregisterNoisyReceiver();
@@ -87,6 +98,8 @@ public partial class AudioService : Java.Lang.Object, IAudioService, AudioManage
         AcquireLocks();
         RegisterNoisyReceiver();
 
+        _shouldBePlaying = true;
+
         if (_isUsingExoPlayer)
         {
             ResumeExoPlayer();
@@ -94,12 +107,20 @@ public partial class AudioService : Java.Lang.Object, IAudioService, AudioManage
         else
         {
             if (_player != null && !_player.IsPlaying) _player.Start();
-            else Play("", _currentStationName);
+            else Play(_lastUrl, _currentStationName);
         }
 
         IsPlayingChanged?.Invoke(this, true);
-        StatusChanged?.Invoke(this, "Gra");
+        StatusChanged?.Invoke(this, LocalizationResourceManager.Instance["StatusPlayingGeneric"]);
         UpdateSystemMediaInfo(true);
+
+        if (!_isUsingExoPlayer && _player != null)
+        {
+            // Jeśli strażnik umarł (bo np. pauza trwała długo), restartujemy go (opcjonalne, ale bezpieczne)
+            // StartMonitoring(_currentUrl);  <-- To wymagałoby przechowywania _currentUrl w klasie
+            // Na razie samo ustawienie _shouldBePlaying = true powinno wystarczyć, 
+            // bo pętla w StartMonitoring kręci się cały czas.
+        }
     }
 
     public void Stop()
@@ -107,7 +128,7 @@ public partial class AudioService : Java.Lang.Object, IAudioService, AudioManage
         AbandonAudioFocus();
         StopInternal();
         IsPlayingChanged?.Invoke(this, false);
-        StatusChanged?.Invoke(this, "Zatrzymano");
+        StatusChanged?.Invoke(this, LocalizationResourceManager.Instance["StatusStopped"]);
         _notificationManager?.Cancel(NotificationId);
         if (_mediaSession != null) _mediaSession.Active = false;
     }
@@ -160,8 +181,11 @@ public partial class AudioService : Java.Lang.Object, IAudioService, AudioManage
     private async void AttemptReconnect()
     {
         _retryCount++;
-        System.Diagnostics.Debug.WriteLine($"[AudioService] Utrata sieci. Próba {_retryCount}/{MaxRetries}...");
-        StatusChanged?.Invoke(this, $"Słaby sygnał... Łączę ({_retryCount}/{MaxRetries})");
+        string logPrefix = LocalizationResourceManager.Instance["LogReconnectTry"];
+        System.Diagnostics.Debug.WriteLine($"[AudioService] {logPrefix} {_retryCount}/{MaxRetries}...");
+
+        string weakSignal = LocalizationResourceManager.Instance["StatusWeakSignal"];
+        StatusChanged?.Invoke(this, $"{weakSignal} ({_retryCount}/{MaxRetries})");
 
         await Task.Delay(3000);
 

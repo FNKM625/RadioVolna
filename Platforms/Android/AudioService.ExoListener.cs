@@ -1,5 +1,6 @@
 ﻿using AndroidX.Media3.Common;
 using AndroidX.Media3.ExoPlayer;
+using RadioVolna.Resources;
 
 namespace RadioVolna;
 
@@ -19,11 +20,12 @@ public partial class AudioService
             switch (playbackState)
             {
                 case 2:
-                    _service.StatusChanged?.Invoke(_service, "Buforowanie...");
+                    _service.StatusChanged?.Invoke(_service, LocalizationResourceManager.Instance["StatusBuffering"]);
                     break;
                 case 3:
                     _service._retryCount = 0;
-                    _service.StatusChanged?.Invoke(_service, $"Gra: {_service._currentStationName}");
+                    string statusPlaying = LocalizationResourceManager.Instance["StatusPlaying"];
+                    _service.StatusChanged?.Invoke(_service, $"{statusPlaying} {_service._currentStationName}");
                     _service.IsPlayingChanged?.Invoke(_service, true);
                     break;
                 case 4:
@@ -54,7 +56,7 @@ public partial class AudioService
             else
             {
                 _service.Log($"Exo Error: {error?.ErrorCodeName}");
-                _service.StatusChanged?.Invoke(_service, "Brak sieci / Błąd");
+                _service.StatusChanged?.Invoke(_service, LocalizationResourceManager.Instance["StatusErrorNetworkGeneric"]);
                 _service.IsPlayingChanged?.Invoke(_service, false);
                 _service._retryCount = 0;
             }
