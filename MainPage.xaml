@@ -86,7 +86,7 @@
               IsVisible="False"
               BackgroundColor="#CC000000"
               Padding="20">
-            <Border BackgroundColor="{AppThemeBinding Light={StaticResource TextDark}, Dark={StaticResource TextLight}}"
+            <Border BackgroundColor="{AppThemeBinding Light={StaticResource TextDark}, Dark={StaticResource CardDark}}"
                     StrokeThickness="0"
                     VerticalOptions="Center"
                     HeightRequest="500">
@@ -109,7 +109,7 @@
                         <CollectionView.ItemTemplate>
                             <DataTemplate>
                                 <Border Stroke="Transparent"
-                                        BackgroundColor="{AppThemeBinding Light={StaticResource CardLightD}, Dark={StaticResource CardDark}}"
+                                        BackgroundColor="{AppThemeBinding Light={StaticResource CardLightD}, Dark={StaticResource CardDarkL}}"
                                         Padding="10" Margin="0,5">
                                     <Border.StrokeShape>
                                         <RoundRectangle CornerRadius="8" />

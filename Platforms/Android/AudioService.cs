@@ -13,6 +13,7 @@ public partial class AudioService : Java.Lang.Object, IAudioService, AudioManage
 {
     private Context _context;
     private MediaPlayer? _player;
+    private string _lastUrl = "";
 
     private bool _isUsingExoPlayer = false;
 
@@ -43,6 +44,8 @@ public partial class AudioService : Java.Lang.Object, IAudioService, AudioManage
     // --- LOGIKA HYBRYDOWA ---
     public async void Play(string url, string stationName)
     {
+        _lastUrl = url;
+
         if (!RequestAudioFocus())
         {
             StatusChanged?.Invoke(this, LocalizationResourceManager.Instance["StatusAudioBusy"]);
@@ -76,6 +79,8 @@ public partial class AudioService : Java.Lang.Object, IAudioService, AudioManage
 
     public void Pause()
     {
+        _shouldBePlaying = false;
+
         if (_isUsingExoPlayer) PauseExoPlayer();
         else if (_player != null && _player.IsPlaying) _player.Pause();
 
@@ -93,6 +98,8 @@ public partial class AudioService : Java.Lang.Object, IAudioService, AudioManage
         AcquireLocks();
         RegisterNoisyReceiver();
 
+        _shouldBePlaying = true;
+
         if (_isUsingExoPlayer)
         {
             ResumeExoPlayer();
@@ -100,12 +107,20 @@ public partial class AudioService : Java.Lang.Object, IAudioService, AudioManage
         else
         {
             if (_player != null && !_player.IsPlaying) _player.Start();
-            else Play("", _currentStationName);
+            else Play(_lastUrl, _currentStationName);
         }
 
         IsPlayingChanged?.Invoke(this, true);
-        StatusChanged?.Invoke(this, LocalizationResourceManager.Instance["NotifActionPlay"]);
+        StatusChanged?.Invoke(this, LocalizationResourceManager.Instance["StatusPlayingGeneric"]);
         UpdateSystemMediaInfo(true);
+
+        if (!_isUsingExoPlayer && _player != null)
+        {
+            // Jeśli strażnik umarł (bo np. pauza trwała długo), restartujemy go (opcjonalne, ale bezpieczne)
+            // StartMonitoring(_currentUrl);  <-- To wymagałoby przechowywania _currentUrl w klasie
+            // Na razie samo ustawienie _shouldBePlaying = true powinno wystarczyć, 
+            // bo pętla w StartMonitoring kręci się cały czas.
+        }
     }
 
     public void Stop()

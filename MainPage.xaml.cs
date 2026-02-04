@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using RadioVolna.Services;
 using RadioVolna.Resources;
+using System.ComponentModel;
 
 namespace RadioVolna;
 
@@ -11,6 +12,8 @@ public partial class MainPage : ContentPage
     private readonly StationService _stationService = new StationService();
     private readonly StationManager _stationManager = new StationManager();
 
+    private bool _isPlaying = false;
+
     public ObservableCollection<Station> Stations { get; set; } = new();
 
     public MainPage(IAudioService audioService)
@@ -20,6 +23,7 @@ public partial class MainPage : ContentPage
         _audioService = audioService;
         StationsList.ItemsSource = Stations;
         _audioService.StatusChanged += OnStatusChanged;
+        LocalizationResourceManager.Instance.PropertyChanged += OnLanguageChanged;
 
         LoadStations();
     }
@@ -58,9 +62,8 @@ public partial class MainPage : ContentPage
         {
             StatusLabel.Text = message;
 
-            bool isError = message.Contains("Błąd") || message.Contains("Brak") || message.Contains("Słaby")
-                        || message.Contains("Error") || message.Contains("No network")
-                        || message.Contains("Ошибка") || message.Contains("Нет сети");
+            bool isError = message.Contains("Błąd") || message.Contains("Error") || message.Contains("Ошибка") ||
+                           message.Contains("Brak") || message.Contains("Słaby");
 
             bool isPlaying = message.Contains("Gra") || message.Contains("Playing") || message.Contains("Играет");
 
@@ -99,17 +102,17 @@ public partial class MainPage : ContentPage
         StatusLabel.TextColor = Colors.LightGreen;
 
         PlayPauseBtn.IsEnabled = true;
-        PlayPauseBtn.Text = LocalizationResourceManager.Instance["BtnPause"];
+
+        _isPlaying = true;
+        UpdatePlayPauseText();
     }
 
     private void OnPlayPauseClicked(object sender, EventArgs e)
     {
-        string pauseText = LocalizationResourceManager.Instance["BtnPause"];
-
-        if (PlayPauseBtn.Text == pauseText)
+        if (_isPlaying)
         {
             _audioService.Pause();
-            PlayPauseBtn.Text = LocalizationResourceManager.Instance["BtnResume"];
+            _isPlaying = false;
 
             StatusLabel.Text = LocalizationResourceManager.Instance["NotifPaused"];
             StatusLabel.TextColor = Colors.Orange;
@@ -117,11 +120,13 @@ public partial class MainPage : ContentPage
         else
         {
             _audioService.Resume();
-            PlayPauseBtn.Text = LocalizationResourceManager.Instance["BtnPause"];
+            _isPlaying = true;
 
             StatusLabel.Text = LocalizationResourceManager.Instance["StatusPlayingGeneric"];
             StatusLabel.TextColor = Colors.LightGreen;
         }
+
+        UpdatePlayPauseText();
     }
 
     // --- UI EVENT HANDLERS ---
@@ -197,5 +202,15 @@ public partial class MainPage : ContentPage
         await NotificationBadge.FadeTo(0, 250);
         NotificationBadge.IsVisible = false;
         NotificationBadge.InputTransparent = true;
+    }
+    private void OnLanguageChanged(object sender, PropertyChangedEventArgs e)
+    {
+        UpdatePlayPauseText();
+    }
+
+    private void UpdatePlayPauseText()
+    {
+        string key = _isPlaying ? "BtnPause" : "BtnResume";
+        PlayPauseBtn.Text = LocalizationResourceManager.Instance[key];
     }
 }
