@@ -1,0 +1,246 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="SettingsTitle" xml:space="preserve">
+    <value>Ustawienia</value>
+  </data>
+  <data name="BtnLanguage" xml:space="preserve">
+    <value>🌍 Zmień język</value>
+  </data>
+  <data name="BtnTheme" xml:space="preserve">
+    <value>🎨  Zmień motyw</value>
+  </data>
+  <data name="BtnAbout" xml:space="preserve">
+    <value>ℹ️ O aplikacji</value>
+  </data>
+  <data name="BtnAddAutoStart" xml:space="preserve">
+    <value>Dodaj stację do autostartu</value>
+  </data>
+  <data name="BtnClose" xml:space="preserve">
+    <value>Zamknij</value>
+  </data>
+  <data name="DialogLangTitle" xml:space="preserve">
+    <value>Wybierz język</value>
+  </data>
+  <data name="DialogCancel" xml:space="preserve">
+    <value>Anuluj</value>
+  </data>
+  <data name="StatusPlayingExo" xml:space="preserve">
+    <value>Gra (Exo):</value>
+  </data>
+  <data name="StatusErrorExo" xml:space="preserve">
+    <value>Błąd (Exo):</value>
+  </data>
+  <data name="StatusPlaying" xml:space="preserve">
+    <value>Gra:</value>
+  </data>
+  <data name="StatusBuffering" xml:space="preserve">
+    <value>Buforowanie...</value>
+  </data>
+  <data name="StatusWeakSignal" xml:space="preserve">
+    <value>Słaby sygnał... Łączę</value>
+  </data>
+  <data name="StatusConnectionError" xml:space="preserve">
+    <value>Błąd: Brak połączenia</value>
+  </data>
+  <data name="StatusNoNetwork" xml:space="preserve">
+    <value>Błąd: Brak sieci</value>
+  </data>
+  <data name="NotifChannelName" xml:space="preserve">
+    <value>Odtwarzacz Radio Volna</value>
+  </data>
+  <data name="NotifChannelDesc" xml:space="preserve">
+    <value>Powiadomienie sterowania radiem</value>
+  </data>
+  <data name="NotifPaused" xml:space="preserve">
+    <value>Wstrzymano</value>
+  </data>
+  <data name="Play" xml:space="preserve">
+    <value>Graj</value>
+  </data>
+  <data name="NotifActionPause" xml:space="preserve">
+    <value>Pauza</value>
+  </data>
+  <data name="StatusErrorNetworkGeneric" xml:space="preserve">
+    <value>Brak sieci / Błąd</value>
+  </data>
+  <data name="StatusAudioBusy" xml:space="preserve">
+    <value>Audio zajęte</value>
+  </data>
+  <data name="StatusCheckingStream" xml:space="preserve">
+    <value>Sprawdzam strumień...</value>
+  </data>
+  <data name="StatusPaused" xml:space="preserve">
+    <value>Wstrzymano</value>
+  </data>
+  <data name="StatusStopped" xml:space="preserve">
+    <value>Zatrzymano</value>
+  </data>
+  <data name="LogReconnectTry" xml:space="preserve">
+    <value>Utrata sieci. Próba</value>
+  </data>
+  <data name="AppName" xml:space="preserve">
+    <value>Radio Volna</value>
+  </data>
+  <data name="MsgSelectStation" xml:space="preserve">
+    <value>Wybierz stację</value>
+  </data>
+  <data name="StatusReady" xml:space="preserve">
+    <value>Gotowy</value>
+  </data>
+  <data name="BtnStationList" xml:space="preserve">
+    <value>≡ LISTA STACJI</value>
+  </data>
+  <data name="BtnResume" xml:space="preserve">
+    <value>▶ WZNÓW</value>
+  </data>
+  <data name="BtnPause" xml:space="preserve">
+    <value>⏸ PAUZA</value>
+  </data>
+  <data name="BtnExit" xml:space="preserve">
+    <value>❌ WYJŚCIE</value>
+  </data>
+  <data name="LabelAutoStartStation" xml:space="preserve">
+    <value>Stacja na autostarcie:</value>
+  </data>
+  <data name="MsgNoStationSelected" xml:space="preserve">
+    <value>Nie wybrano stacji</value>
+  </data>
+  <data name="MsgAddedToAutoStart" xml:space="preserve">
+    <value>Dodano do autostartu</value>
+  </data>
+  <data name="TitleError" xml:space="preserve">
+    <value>Błąd</value>
+  </data>
+  <data name="MsgStationListError" xml:space="preserve">
+    <value>Nie udało się pobrać listy stacji.</value>
+  </data>
+  <data name="BtnOk" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="MsgAutoStartPrefix" xml:space="preserve">
+    <value>Autostart:</value>
+  </data>
+  <data name="StatusPlayingGeneric" xml:space="preserve">
+    <value>Odtwarzanie...</value>
+  </data>
+  <data name="MsgAboutBody" xml:space="preserve">
+    <value>Radio Volna&#10;FNKMG&#10;v{0}&#10;© 2026</value>
+  </data>
+</root>

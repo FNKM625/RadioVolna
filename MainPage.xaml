@@ -2,40 +2,41 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:views="clr-namespace:RadioVolna.Views"
+             xmlns:helpers="clr-namespace:RadioVolna.Resources"
              x:Class="RadioVolna.MainPage"
              BackgroundColor="{AppThemeBinding Light={StaticResource BgLight}, Dark={StaticResource BgDark}}">
 
-	<Grid>
-		<Grid.RowDefinitions>
-			<RowDefinition Height="Auto"/>
-			<RowDefinition Height="*"/>
-			<RowDefinition Height="Auto"/>
-		</Grid.RowDefinitions>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
-		<VerticalStackLayout Grid.Row="0"
+        <VerticalStackLayout Grid.Row="0"
                              Spacing="10"
                              Padding="30,40,30,10">
-			<Label Text="Radio Volna"
+            <Label Text="{helpers:Translate AppName}"
                    FontSize="32"
                    FontAttributes="Bold"
                    TextColor="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}"
                    HorizontalOptions="Center" />
 
-			<Label x:Name="CurrentStationLabel"
-                   Text="Wybierz stację"
+            <Label x:Name="CurrentStationLabel"
+                   Text="{helpers:Translate MsgSelectStation}"
                    TextColor="#03DAC6"
                    FontSize="22"
                    HorizontalOptions="Center"
                    HorizontalTextAlignment="Center"/>
 
-			<Label x:Name="StatusLabel"
-                   Text="Gotowy"
+            <Label x:Name="StatusLabel"
+                   Text="{helpers:Translate StatusReady}"
                    TextColor="Gray"
                    FontSize="14"
                    HorizontalOptions="Center" />
-		</VerticalStackLayout>
+        </VerticalStackLayout>
 
-		<Button Grid.Row="0"
+        <Button Grid.Row="0"
                 Text="⚙️"
                 FontSize="24"
                 BackgroundColor="Transparent"
@@ -45,25 +46,26 @@
                 Margin="0,35,15,0"
                 Clicked="OnSettingsClicked"/>
 
-		<Image Grid.Row="1"
+        <Image Grid.Row="1"
                Source="logo_radio_volna.png"
                Aspect="AspectFit"
                HorizontalOptions="Center"
                VerticalOptions="Center"
                Margin="40"/>
 
-		<VerticalStackLayout Grid.Row="2"
+        <VerticalStackLayout Grid.Row="2"
                              Spacing="20"
                              Padding="30,10,30,40">
-			<Button Text="≡ LISTA STACJI"
+
+            <Button Text="{helpers:Translate BtnStationList}"
                     Clicked="OnOpenListClicked"
                     BackgroundColor="{AppThemeBinding Light={StaticResource CardLight}, Dark={StaticResource CardDark}}"
                     TextColor="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}"
                     HeightRequest="60"
                     CornerRadius="30"/>
 
-			<Button x:Name="PlayPauseBtn"
-                    Text="▶ WZNÓW"
+            <Button x:Name="PlayPauseBtn"
+                    Text="{helpers:Translate BtnResume}"
                     Clicked="OnPlayPauseClicked"
                     BackgroundColor="#6200EE"
                     TextColor="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}"
@@ -71,55 +73,55 @@
                     CornerRadius="30"
                     IsEnabled="False"/>
 
-			<Button Text="❌ WYJŚCIE"
+            <Button Text="{helpers:Translate BtnExit}"
                     Clicked="OnExitClicked"
                     BackgroundColor="{AppThemeBinding Light={StaticResource BCLight}, Dark={StaticResource BCDardk}}"
                     TextColor="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}"
                     HeightRequest="60"
                     CornerRadius="30"/>
-		</VerticalStackLayout>
+        </VerticalStackLayout>
 
-		<Grid x:Name="StationSelectionOverlay"
+        <Grid x:Name="StationSelectionOverlay"
               Grid.RowSpan="3"
               IsVisible="False"
               BackgroundColor="#CC000000"
               Padding="20">
-			<Border BackgroundColor="#1E1E1E"
+            <Border BackgroundColor="{AppThemeBinding Light={StaticResource TextDark}, Dark={StaticResource TextLight}}"
                     StrokeThickness="0"
                     VerticalOptions="Center"
                     HeightRequest="500">
-				<Border.StrokeShape>
-					<RoundRectangle CornerRadius="20"/>
-				</Border.StrokeShape>
-				<Grid RowDefinitions="Auto, *, Auto"
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="20"/>
+                </Border.StrokeShape>
+                <Grid RowDefinitions="Auto, *, Auto"
                       Padding="20">
-					<Label Grid.Row="0"
-                           Text="Wybierz stację"
+                    <Label Grid.Row="0"
+                           Text="{helpers:Translate MsgSelectStation}"
                            TextColor="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}"
                            FontSize="20"
                            FontAttributes="Bold"
                            HorizontalOptions="Center"
                            Margin="0,0,0,15"/>
-					<CollectionView Grid.Row="1"
+                    <CollectionView Grid.Row="1"
                                     x:Name="StationsList"
                                     SelectionMode="Single"
                                     SelectionChanged="OnStationSelected">
-						<CollectionView.ItemTemplate>
-							<DataTemplate>
-								<Border Stroke="Transparent"
-                                        BackgroundColor="{AppThemeBinding Light={StaticResource CardLight}, Dark={StaticResource CardDark}}"
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Border Stroke="Transparent"
+                                        BackgroundColor="{AppThemeBinding Light={StaticResource CardLightD}, Dark={StaticResource CardDark}}"
                                         Padding="10" Margin="0,5">
-									<Border.StrokeShape>
-										<RoundRectangle CornerRadius="8" />
-									</Border.StrokeShape>
-									<Grid ColumnDefinitions="*, Auto">
-										<Label Grid.Column="0"
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="8" />
+                                    </Border.StrokeShape>
+                                    <Grid ColumnDefinitions="*, Auto">
+                                        <Label Grid.Column="0"
                                                Text="{Binding DisplayName}"
                                                TextColor="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}"
                                                FontSize="16"
                                                VerticalOptions="Center" />
 
-										<Button Grid.Column="1"
+                                        <Button Grid.Column="1"
                                                 Text="♡" FontSize="22"
                                                 BackgroundColor="Transparent"
                                                 TextColor="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}"
@@ -127,40 +129,38 @@
                                                 CommandParameter="{Binding .}"
                                                 VerticalOptions="Center"
                                                 Margin="10,0,0,0">
-
-											<Button.Triggers>
-												<DataTrigger TargetType="Button"
+                                            <Button.Triggers>
+                                                <DataTrigger TargetType="Button"
                                                              Binding="{Binding IsFavorite}"
                                                              Value="True">
-													<Setter Property="Text" Value="❤" />
-													<Setter Property="TextColor" Value="#FF0000" />
-												</DataTrigger>
-											</Button.Triggers>
-										</Button>
-									</Grid>
-								</Border>
-							</DataTemplate>
-						</CollectionView.ItemTemplate>
-					</CollectionView>
-					<Button Grid.Row="2"
-                            Text="Anuluj"
+                                                    <Setter Property="Text" Value="❤" />
+                                                    <Setter Property="TextColor" Value="#FF0000" />
+                                                </DataTrigger>
+                                            </Button.Triggers>
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+
+                    <Button Grid.Row="2"
+                            Text="{helpers:Translate DialogCancel}"
                             Clicked="OnCloseListClicked"
                             BackgroundColor="Transparent"
                             TextColor="#FF5555"
                             Margin="0,15,0,0"/>
-				</Grid>
-			</Border>
-		</Grid>
+                </Grid>
+            </Border>
+        </Grid>
 
         <Grid x:Name="SettingsOverlayContainer"
-          IsVisible="False"
-          Grid.RowSpan="3">
-
+              IsVisible="False"
+              Grid.RowSpan="3">
             <views:SettingsView 
-            CloseRequested="OnCloseSettingsClicked"
-            AutostartRequested="OnAutostartOptionClicked"
-            AboutRequested="OnAboutClicked"/>
-
+                CloseRequested="OnCloseSettingsClicked"
+                AutostartRequested="OnAutostartOptionClicked"
+                AboutRequested="OnAboutClicked"/>
         </Grid>
 
         <Grid x:Name="AutoStartOverlay"
@@ -173,89 +173,87 @@
                     StrokeThickness="0"
                     VerticalOptions="Center"
                     HeightRequest="500">
-				<Border.StrokeShape>
-					<RoundRectangle CornerRadius="20"/>
-				</Border.StrokeShape>
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="20"/>
+                </Border.StrokeShape>
 
-				<Grid RowDefinitions="Auto, Auto, *, Auto" RowSpacing="10" Padding="20">
+                <Grid RowDefinitions="Auto, Auto, *, Auto" RowSpacing="10" Padding="20">
 
-					<Label Grid.Row="0"
-                           Text="Stacja na autostarcie:"
+                    <Label Grid.Row="0"
+                           Text="{helpers:Translate LabelAutoStartStation}"
                            TextColor="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}"
                            FontSize="14"
                            HorizontalOptions="Center"/>
 
-					<Label Grid.Row="1"
+                    <Label Grid.Row="1"
                            x:Name="CurrentAutoStartLabel"
-                           Text="Nie wybrano stacji"
+                           Text="{helpers:Translate MsgNoStationSelected}"
                            TextColor="#03DAC6"
                            FontSize="18"
                            FontAttributes="Bold"
                            HorizontalOptions="Center"
                            Margin="0,0,0,10"/>
 
-					<CollectionView Grid.Row="2"
+                    <CollectionView Grid.Row="2"
                                     x:Name="AutoStartList"
                                     SelectionMode="Single"
                                     SelectionChanged="OnAutoStartStationSelected">
-						<CollectionView.ItemTemplate>
-							<DataTemplate>
-								<Border Stroke="Transparent"
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Border Stroke="Transparent"
                                         BackgroundColor="{AppThemeBinding Light={StaticResource CardLightD}, Dark={StaticResource CardDarkL}}"
                                         Padding="15"
                                         Margin="0,5">
-                                    
-									<Border.StrokeShape>
-										<RoundRectangle CornerRadius="8" />
-									</Border.StrokeShape>
-
-									<Grid ColumnDefinitions="*, Auto">
-										<Label Grid.Column="0"
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="8" />
+                                    </Border.StrokeShape>
+                                    <Grid ColumnDefinitions="*, Auto">
+                                        <Label Grid.Column="0"
                                                Text="{Binding DisplayName}"
                                                TextColor="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}"
                                                FontSize="16"
                                                VerticalOptions="Center"/>
-										<Label Grid.Column="1"
+                                        <Label Grid.Column="1"
                                                Text="❤"
                                                TextColor="#FF0000"
                                                IsVisible="{Binding IsFavorite}"
                                                FontSize="16"
                                                VerticalOptions="Center"/>
-									</Grid>
-								</Border>
-							</DataTemplate>
-						</CollectionView.ItemTemplate>
-					</CollectionView>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
 
-					<Button Grid.Row="3"
+                    <Button Grid.Row="3"
                             FontSize="18"
-                            Text="Anuluj"
+                            Text="{helpers:Translate DialogCancel}"
                             Clicked="OnCloseAutoStartClicked"
                             BackgroundColor="Transparent"
-                            TextColor="#FF0000"
+                            TextColor="#FF5555"
                             Margin="0,10,0,0"/>
-				</Grid>
-			</Border>
-		</Grid>
+                </Grid>
+            </Border>
+        </Grid>
 
-		<Border x:Name="NotificationBadge"
-            VerticalOptions="End"
-            HorizontalOptions="Center"
-            Margin="0,0,0,80"
-            Padding="15,10"
-            BackgroundColor="{AppThemeBinding Light={StaticResource CardLight}, Dark={StaticResource CardDark}}"
-            StrokeShape="RoundRectangle 20"
-            Opacity="0"
-            InputTransparent="True"
-            IsVisible="False">
+        <Border x:Name="NotificationBadge"
+                VerticalOptions="End"
+                HorizontalOptions="Center"
+                Margin="0,0,0,80"
+                Padding="15,10"
+                BackgroundColor="{AppThemeBinding Light={StaticResource CardLight}, Dark={StaticResource CardDark}}"
+                StrokeShape="RoundRectangle 20"
+                Opacity="0"
+                InputTransparent="True"
+                IsVisible="False">
 
-			<Label x:Name="NotificationLabel"
-               Text="Dodano do autostartu"
-               TextColor="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}"
-               FontSize="14"
-               FontAttributes="Bold"
-               HorizontalOptions="Center"/>
-		</Border>
+            <Label x:Name="NotificationLabel"
+                   Text="{helpers:Translate MsgAddedToAutoStart}"
+                   TextColor="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}"
+                   FontSize="14"
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center"/>
+        </Border>
 
-	</Grid>
+    </Grid>
 </ContentPage>

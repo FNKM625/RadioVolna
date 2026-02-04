@@ -4,6 +4,7 @@ using AndroidX.Media3.Common;
 using AndroidX.Media3.ExoPlayer;
 using AndroidX.Media3.DataSource;
 using AndroidX.Media3.ExoPlayer.Source;
+using RadioVolna.Resources;
 
 namespace RadioVolna;
 
@@ -36,13 +37,15 @@ public partial class AudioService
             _exoPlayer.PlayWhenReady = true;
 
             IsPlayingChanged?.Invoke(this, true);
-            StatusChanged?.Invoke(this, $"Gra (Exo): {_currentStationName}");
+            string statusPrefix = LocalizationResourceManager.Instance["StatusPlayingExo"];
+            StatusChanged?.Invoke(this, $"{statusPrefix} {_currentStationName}");
             UpdateSystemMediaInfo(true);
         }
         catch (Exception ex)
         {
             Log($"ExoPlayer Błąd: {ex.Message}");
-            StatusChanged?.Invoke(this, "Błąd ExoPlayera");
+            string errorMsg = LocalizationResourceManager.Instance["StatusErrorExo"];
+            StatusChanged?.Invoke(this, errorMsg);
         }
     }
 

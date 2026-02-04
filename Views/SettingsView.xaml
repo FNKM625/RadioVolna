@@ -2,6 +2,7 @@
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="RadioVolna.Views.SettingsView"
+             xmlns:helpers="clr-namespace:RadioVolna.Resources"
              BackgroundColor="{AppThemeBinding Light={StaticResource CardLight}, Dark={StaticResource CardDark}}">
 
     <Border BackgroundColor="{AppThemeBinding Light={StaticResource CardLight}, Dark={StaticResource CardDark}}"
@@ -30,27 +31,27 @@
             </VerticalStackLayout.Resources>
 
 
-            <Label Text="Ustawienia"
+            <Label Text="{helpers:Translate SettingsTitle}"
                    TextColor="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}"
                    FontSize="22"
                    FontAttributes="Bold"
                    HorizontalOptions="Center"
                    Margin="0,0,0,10"/>
 
-            <Button Text="Dodaj stację do autostartu"
+            <Button Text="{helpers:Translate BtnAddAutoStart}"
                     Clicked="OnAutostartClicked"/>
 
-            <Button Text="🌍 Zmień język"
+            <Button Text="{helpers:Translate BtnLanguage}"
                     Clicked="OnLanguageClicked"/>
 
-            <Button Text="🎨 Zmień motyw"
+            <Button Text="{helpers:Translate BtnTheme}"
                     Clicked="OnThemeClicked"/>
 
-            <Button Text="ℹ️ O aplikacji"
+            <Button Text="{helpers:Translate BtnAbout}"
                     Clicked="OnAboutClicked"
                     Margin="0,10,0,0"/>
 
-            <Button Text="Zamknij"
+            <Button Text="{helpers:Translate BtnClose}"
                     Clicked="OnCloseClicked"
                     BackgroundColor="Transparent"
                     TextColor="#FF5555"

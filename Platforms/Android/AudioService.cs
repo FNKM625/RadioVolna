@@ -5,6 +5,7 @@ using Android.Media;
 using Android.Media.Session;
 using Android.Net.Wifi;
 using Android.OS;
+using RadioVolna.Resources;
 
 namespace RadioVolna;
 
@@ -42,10 +43,14 @@ public partial class AudioService : Java.Lang.Object, IAudioService, AudioManage
     // --- LOGIKA HYBRYDOWA ---
     public async void Play(string url, string stationName)
     {
-        if (!RequestAudioFocus()) { StatusChanged?.Invoke(this, "Audio zajęte"); return; }
+        if (!RequestAudioFocus())
+        {
+            StatusChanged?.Invoke(this, LocalizationResourceManager.Instance["StatusAudioBusy"]);
+            return;
+        }
 
         _currentStationName = stationName;
-        StatusChanged?.Invoke(this, "Sprawdzam strumień...");
+        StatusChanged?.Invoke(this, LocalizationResourceManager.Instance["StatusCheckingStream"]);
 
         StopInternal();
         AcquireLocks();
@@ -75,7 +80,8 @@ public partial class AudioService : Java.Lang.Object, IAudioService, AudioManage
         else if (_player != null && _player.IsPlaying) _player.Pause();
 
         IsPlayingChanged?.Invoke(this, false);
-        StatusChanged?.Invoke(this, "Wstrzymano");
+        StatusChanged?.Invoke(this, LocalizationResourceManager.Instance["NotifPaused"]);
+
         UpdateSystemMediaInfo(false);
         ReleaseLocks();
         UnregisterNoisyReceiver();
@@ -98,7 +104,7 @@ public partial class AudioService : Java.Lang.Object, IAudioService, AudioManage
         }
 
         IsPlayingChanged?.Invoke(this, true);
-        StatusChanged?.Invoke(this, "Gra");
+        StatusChanged?.Invoke(this, LocalizationResourceManager.Instance["NotifActionPlay"]);
         UpdateSystemMediaInfo(true);
     }
 
@@ -107,7 +113,7 @@ public partial class AudioService : Java.Lang.Object, IAudioService, AudioManage
         AbandonAudioFocus();
         StopInternal();
         IsPlayingChanged?.Invoke(this, false);
-        StatusChanged?.Invoke(this, "Zatrzymano");
+        StatusChanged?.Invoke(this, LocalizationResourceManager.Instance["StatusStopped"]);
         _notificationManager?.Cancel(NotificationId);
         if (_mediaSession != null) _mediaSession.Active = false;
     }
@@ -160,8 +166,11 @@ public partial class AudioService : Java.Lang.Object, IAudioService, AudioManage
     private async void AttemptReconnect()
     {
         _retryCount++;
-        System.Diagnostics.Debug.WriteLine($"[AudioService] Utrata sieci. Próba {_retryCount}/{MaxRetries}...");
-        StatusChanged?.Invoke(this, $"Słaby sygnał... Łączę ({_retryCount}/{MaxRetries})");
+        string logPrefix = LocalizationResourceManager.Instance["LogReconnectTry"];
+        System.Diagnostics.Debug.WriteLine($"[AudioService] {logPrefix} {_retryCount}/{MaxRetries}...");
+
+        string weakSignal = LocalizationResourceManager.Instance["StatusWeakSignal"];
+        StatusChanged?.Invoke(this, $"{weakSignal} ({_retryCount}/{MaxRetries})");
 
         await Task.Delay(3000);
 

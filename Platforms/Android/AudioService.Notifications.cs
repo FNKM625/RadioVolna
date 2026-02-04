@@ -5,6 +5,7 @@ using Android.Graphics;
 using Android.Media;
 using Android.Media.Session;
 using Android.OS;
+using RadioVolna.Resources;
 
 namespace RadioVolna;
 
@@ -28,9 +29,12 @@ public partial class AudioService
     {
         if (Build.VERSION.SdkInt >= BuildVersionCodes.O)
         {
-            var channel = new NotificationChannel(ChannelId, "Radio Volna Player", NotificationImportance.Low)
+            string channelName = LocalizationResourceManager.Instance["NotifChannelName"];
+            string channelDesc = LocalizationResourceManager.Instance["NotifChannelDesc"];
+
+            var channel = new NotificationChannel(ChannelId, channelName, NotificationImportance.Low)
             {
-                Description = "Sterowanie radiem"
+                Description = channelDesc
             };
             _notificationManager = _context.GetSystemService(Context.NotificationService) as NotificationManager;
             if (_notificationManager != null) _notificationManager.CreateNotificationChannel(channel);
@@ -62,8 +66,12 @@ public partial class AudioService
         }
         catch { }
 
+        string textPaused = LocalizationResourceManager.Instance["NotifPaused"];
+        string textPlay = LocalizationResourceManager.Instance["NotifActionPlay"];
+        string textPause = LocalizationResourceManager.Instance["NotifActionPause"];
+
         var metadataBuilder = new MediaMetadata.Builder();
-        metadataBuilder.PutString(MediaMetadata.MetadataKeyTitle, isPlaying ? _currentStationName : "Wstrzymano");
+        metadataBuilder.PutString(MediaMetadata.MetadataKeyTitle, isPlaying ? _currentStationName : textPaused);
         metadataBuilder.PutString(MediaMetadata.MetadataKeyArtist, "Radio Volna");
 
         if (largeIcon != null)
@@ -82,7 +90,7 @@ public partial class AudioService
         _mediaSession.Active = true;
 
         int icon = isPlaying ? Android.Resource.Drawable.IcMediaPause : Android.Resource.Drawable.IcMediaPlay;
-        string text = isPlaying ? "Pauza" : "Graj";
+        string text = isPlaying ? textPause : textPlay;
         string actionToken = isPlaying ? ActionPause : ActionPlay;
 
         var intent = new Intent(actionToken);

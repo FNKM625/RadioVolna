@@ -4,6 +4,7 @@ using Android.Media;
 using Android.OS;
 using System.Diagnostics;
 using System.Net.Http;
+using RadioVolna.Resources;
 
 namespace RadioVolna;
 
@@ -57,7 +58,10 @@ public partial class AudioService
                 _isBuffering = false;
 
                 IsPlayingChanged?.Invoke(this, true);
-                StatusChanged?.Invoke(this, $"Gra: {_currentStationName}");
+
+                string statusPlaying = LocalizationResourceManager.Instance["StatusPlaying"];
+                StatusChanged?.Invoke(this, $"{statusPlaying} {_currentStationName}");
+
                 UpdateSystemMediaInfo(true);
 
                 StartMonitoring(url);
@@ -69,13 +73,13 @@ public partial class AudioService
                 {
                     _isBuffering = true;
                     _bufferingStartTime = DateTime.Now;
-                    StatusChanged?.Invoke(this, "Buforowanie...");
+                    StatusChanged?.Invoke(this, LocalizationResourceManager.Instance["StatusBuffering"]);
                 }
                 else if (e.What == MediaInfo.BufferingEnd)
                 {
                     _isBuffering = false;
                     _retryCount = 0;
-                    StatusChanged?.Invoke(this, $"Gra: {_currentStationName}");
+                    StatusChanged?.Invoke(this, $"{LocalizationResourceManager.Instance["StatusPlaying"]} {_currentStationName}");
                 }
             };
 
@@ -87,7 +91,8 @@ public partial class AudioService
                 if (_retryCount < MaxRetries)
                 {
                     _retryCount++;
-                    string msg = $"Słaby sygnał... Łączę ({_retryCount}/{MaxRetries})";
+                    string weakSignal = LocalizationResourceManager.Instance["StatusWeakSignal"];
+                    string msg = $"{weakSignal} ({_retryCount}/{MaxRetries})";
                     Log($"[Error Handler] Błąd playera. {msg}");
 
                     StatusChanged?.Invoke(this, msg);
@@ -98,7 +103,7 @@ public partial class AudioService
                 }
                 else
                 {
-                    StatusChanged?.Invoke(this, "Błąd: Brak połączenia");
+                    StatusChanged?.Invoke(this, LocalizationResourceManager.Instance["StatusConnectionError"]);
                     IsPlayingChanged?.Invoke(this, false);
                 }
             };
@@ -177,7 +182,8 @@ public partial class AudioService
                             if (_retryCount < MaxRetries)
                             {
                                 _retryCount++;
-                                string msg = $"Słaby sygnał... Łączę ({_retryCount}/{MaxRetries})";
+                                string weakSignal = LocalizationResourceManager.Instance["StatusWeakSignal"];
+                                string msg = $"{weakSignal} ({_retryCount}/{MaxRetries})";
                                 Log($"[Strażnik] Wykryto problem: {reason}. {msg}");
 
                                 MainThread.BeginInvokeOnMainThread(() => StatusChanged?.Invoke(this, msg));
@@ -190,7 +196,7 @@ public partial class AudioService
                             {
                                 MainThread.BeginInvokeOnMainThread(() =>
                                 {
-                                    StatusChanged?.Invoke(this, "Błąd: Brak sieci");
+                                    StatusChanged?.Invoke(this, LocalizationResourceManager.Instance["StatusNoNetwork"]);
                                     IsPlayingChanged?.Invoke(this, false);
                                     StopNativePlayer();
                                 });

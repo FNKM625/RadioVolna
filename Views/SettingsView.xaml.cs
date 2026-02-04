@@ -1,4 +1,6 @@
 ﻿using Microsoft.Maui.Controls;
+using RadioVolna.Resources;
+using System.Globalization;
 
 namespace RadioVolna.Views;
 
@@ -19,7 +21,25 @@ public partial class SettingsView : ContentView
 
     private async void OnLanguageClicked(object sender, EventArgs e)
     {
-        await DisplayTempAlert("Język", "Wybór języka wkrótce.");
+        string title = LocalizationResourceManager.Instance["DialogLangTitle"];
+        string cancel = LocalizationResourceManager.Instance["DialogCancel"];
+
+        string action = await Application.Current.MainPage.DisplayActionSheet(
+            title, cancel, null, "Polski", "English", "Русский");
+
+        string code = action switch
+        {
+            "Polski" => "pl",
+            "English" => "en",
+            "Русский" => "ru",
+            _ => null
+        };
+
+        if (code == null) return;
+
+        CultureInfo newCulture = new CultureInfo(code);
+        LocalizationResourceManager.Instance.SetCulture(newCulture);
+        Preferences.Set("Language", code);
     }
 
     private void OnThemeClicked(object sender, EventArgs e)

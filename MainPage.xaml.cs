@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using RadioVolna.Services;
+using RadioVolna.Resources;
 
 namespace RadioVolna;
 
@@ -29,7 +30,10 @@ public partial class MainPage : ContentPage
 
         if (loadedStations.Count == 0)
         {
-            await DisplayAlert("Błąd", "Nie udało się pobrać listy stacji.", "OK");
+            string title = LocalizationResourceManager.Instance["TitleError"];
+            string msg = LocalizationResourceManager.Instance["MsgStationListError"];
+            string ok = LocalizationResourceManager.Instance["BtnOk"];
+            await DisplayAlert(title, msg, ok);
             return;
         }
 
@@ -53,12 +57,19 @@ public partial class MainPage : ContentPage
         MainThread.BeginInvokeOnMainThread(() =>
         {
             StatusLabel.Text = message;
-            if (message.Contains("Błąd") || message.Contains("Brak") || message.Contains("Słaby"))
+
+            bool isError = message.Contains("Błąd") || message.Contains("Brak") || message.Contains("Słaby")
+                        || message.Contains("Error") || message.Contains("No network")
+                        || message.Contains("Ошибка") || message.Contains("Нет сети");
+
+            bool isPlaying = message.Contains("Gra") || message.Contains("Playing") || message.Contains("Играет");
+
+            if (isError)
                 StatusLabel.TextColor = Colors.Orange;
-            else if (message.Contains("Gra"))
+            else if (isPlaying)
                 StatusLabel.TextColor = Colors.LightGreen;
             else
-                StatusLabel.TextColor = Colors.White;
+                StatusLabel.TextColor = Colors.DarkGray;
         });
     }
 
@@ -72,7 +83,9 @@ public partial class MainPage : ContentPage
             {
                 await Task.Delay(500);
                 PlayStation(station);
-                StatusLabel.Text = $"Autostart: {station.DisplayName}";
+
+                string prefix = LocalizationResourceManager.Instance["MsgAutoStartPrefix"];
+                StatusLabel.Text = $"{prefix} {station.DisplayName}";
             }
         }
     }
@@ -81,26 +94,32 @@ public partial class MainPage : ContentPage
     {
         _audioService.Play(station.Url, station.DisplayName);
         CurrentStationLabel.Text = station.DisplayName;
-        StatusLabel.Text = "Odtwarzanie...";
+
+        StatusLabel.Text = LocalizationResourceManager.Instance["StatusPlayingGeneric"];
         StatusLabel.TextColor = Colors.LightGreen;
+
         PlayPauseBtn.IsEnabled = true;
-        PlayPauseBtn.Text = "⏸ PAUZA";
+        PlayPauseBtn.Text = LocalizationResourceManager.Instance["BtnPause"];
     }
 
     private void OnPlayPauseClicked(object sender, EventArgs e)
     {
-        if (PlayPauseBtn.Text.Contains("PAUZA"))
+        string pauseText = LocalizationResourceManager.Instance["BtnPause"];
+
+        if (PlayPauseBtn.Text == pauseText)
         {
             _audioService.Pause();
-            PlayPauseBtn.Text = "▶ WZNÓW";
-            StatusLabel.Text = "Wstrzymano";
+            PlayPauseBtn.Text = LocalizationResourceManager.Instance["BtnResume"];
+
+            StatusLabel.Text = LocalizationResourceManager.Instance["NotifPaused"];
             StatusLabel.TextColor = Colors.Orange;
         }
         else
         {
             _audioService.Resume();
-            PlayPauseBtn.Text = "⏸ PAUZA";
-            StatusLabel.Text = "Odtwarzanie...";
+            PlayPauseBtn.Text = LocalizationResourceManager.Instance["BtnPause"];
+
+            StatusLabel.Text = LocalizationResourceManager.Instance["StatusPlayingGeneric"];
             StatusLabel.TextColor = Colors.LightGreen;
         }
     }
@@ -111,7 +130,9 @@ public partial class MainPage : ContentPage
         SettingsOverlayContainer.IsVisible = false;
         string currentAutoStartName = Preferences.Get("AutoStartStationName", null);
 
-        CurrentAutoStartLabel.Text = string.IsNullOrEmpty(currentAutoStartName) ? "Nie wybrano stacji" : currentAutoStartName;
+        string noStation = LocalizationResourceManager.Instance["MsgNoStationSelected"];
+
+        CurrentAutoStartLabel.Text = string.IsNullOrEmpty(currentAutoStartName) ? noStation : currentAutoStartName;
         CurrentAutoStartLabel.TextColor = string.IsNullOrEmpty(currentAutoStartName) ? Colors.Gray : Color.FromArgb("#03DAC6");
 
         var filteredList = Stations.Where(s => s.DisplayName != currentAutoStartName).OrderByDescending(s => s.IsFavorite).ToList();
@@ -127,7 +148,9 @@ public partial class MainPage : ContentPage
             Preferences.Set("AutoStartStationName", selectedStation.DisplayName);
             AutoStartList.SelectedItem = null;
             AutoStartOverlay.IsVisible = false;
-            await ShowNotificationAsync($"Autostart: {selectedStation.DisplayName}");
+
+            string prefix = LocalizationResourceManager.Instance["MsgAutoStartPrefix"];
+            await ShowNotificationAsync($"{prefix} {selectedStation.DisplayName}");
         }
     }
 
@@ -150,7 +173,12 @@ public partial class MainPage : ContentPage
     private async void OnAboutClicked(object sender, EventArgs e)
     {
         string v = AppInfo.Current.VersionString;
-        await DisplayAlert("O aplikacji", $"Radio Volna\nFNKMG\nv{v}\n© 2026", "Zamknij");
+
+        string title = LocalizationResourceManager.Instance["BtnAbout"].Replace("ℹ️ ", "");
+        string bodyFormat = LocalizationResourceManager.Instance["MsgAboutBody"];
+        string close = LocalizationResourceManager.Instance["BtnClose"];
+
+        await DisplayAlert(title, string.Format(bodyFormat, v), close);
     }
 
     private void OnExitClicked(object sender, EventArgs e)
