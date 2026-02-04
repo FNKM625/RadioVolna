@@ -3,7 +3,7 @@ setlocal enabledelayedexpansion
 title Radio Volna - Generator APK
 
 :: --- KONFIGURACJA ---
-set "DEFAULT_NAME=RadioVolna.apk"
+set "BASE_NAME=RadioVolna"
 set "FRAMEWORK=net8.0-android"
 set "OUTPUT_FOLDER=apk"
 :: --------------------
@@ -13,9 +13,31 @@ echo      GENERATOR APK - RADIO VOLNA
 echo ==========================================
 echo.
 
-:: 1. Pytanie o nazwę pliku
+:: 1. Pobieranie numeru wersji z pliku .csproj
+echo [INFO] Szukam numeru wersji w pliku .csproj...
+set "APP_VERSION=Unknown"
+
+:: Używamy prostego polecenia PowerShell do wyciągnięcia liczby z tagu <ApplicationVersion>
+for /f "tokens=*" %%i in ('powershell -command "Select-String -Path *.csproj -Pattern '<ApplicationVersion>(\d+)</ApplicationVersion>' | ForEach-Object { $_.Matches.Groups[1].Value }"') do set APP_VERSION=%%i
+
+if "%APP_VERSION%"=="Unknown" (
+    echo [OSTRZEZENIE] Nie udalo sie odczytac wersji. Ustawiam V1.
+    set "APP_VERSION=1"
+) else (
+    echo [INFO] Wykryto wersje projektu: %APP_VERSION%
+)
+
+:: Tworzymy domyślną nazwę, np. RadioVolna_V3.apk
+set "DEFAULT_NAME=%BASE_NAME%_V%APP_VERSION%.apk"
+
+:: 2. Pytanie o nazwę pliku
+echo.
 set /p "USER_NAME=Podaj nazwe pliku (Wcisnij ENTER aby uzyc '%DEFAULT_NAME%'): "
+
+:: Jeśli użytkownik nic nie wpisał, użyj domyślnej
 if "%USER_NAME%"=="" set "USER_NAME=%DEFAULT_NAME%"
+
+:: Sprawdź czy użytkownik dodał .apk na końcu, jak nie to dodaj
 if /i not "%USER_NAME:~-4%"==".apk" set "USER_NAME=%USER_NAME%.apk"
 
 echo.
@@ -24,7 +46,7 @@ echo [INFO] Folder docelowy: \%OUTPUT_FOLDER%\
 echo [INFO] Rozpoczynam budowanie...
 echo.
 
-:: 2. Komenda budowania
+:: 3. Komenda budowania
 dotnet publish -f %FRAMEWORK% -c Release -p:AndroidPackageFormat=apk
 
 if %ERRORLEVEL% NEQ 0 (
@@ -43,11 +65,10 @@ if not exist "%OUTPUT_FOLDER%" (
     mkdir "%OUTPUT_FOLDER%"
 )
 
-:: 3. Przenoszenie TYLKO pliku SIGNED
+:: 4. Przenoszenie TYLKO pliku SIGNED
 set "SOURCE_DIR=bin\Release\%FRAMEWORK%\publish"
 set "FOUND=0"
 
-:: ZMIANA TUTAJ: Szukamy *-Signed.apk
 for %%F in ("%SOURCE_DIR%\*-Signed.apk") do (
     echo [INFO] Znaleziono podpisana wersje: %%~nxF
     copy /Y "%%F" ".\%OUTPUT_FOLDER%\%USER_NAME%" >nul
@@ -57,12 +78,13 @@ for %%F in ("%SOURCE_DIR%\*-Signed.apk") do (
     )
 )
 
+:: Zabezpieczenie na wypadek braku pliku Signed
 if %FOUND% EQU 0 (
-    :: Zabezpieczenie: jeśli nie ma Signed, spróbuj znaleźć cokolwiek (dla pewności)
     echo [INFO] Nie znaleziono wersji -Signed, szukam zwyklej...
     for %%F in ("%SOURCE_DIR%\*.apk") do (
         copy /Y "%%F" ".\%OUTPUT_FOLDER%\%USER_NAME%" >nul
         set "FOUND=1"
+        echo [SUKCES] Plik gotowy (niepodpisany): \%OUTPUT_FOLDER%\%USER_NAME%
     )
 )
 
