@@ -2,9 +2,9 @@
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="RadioVolna.Views.SettingsView"
-             BackgroundColor="#CC000000">
+             BackgroundColor="{AppThemeBinding Light={StaticResource CardLight}, Dark={StaticResource CardDark}}">
 
-    <Border BackgroundColor="#252525"
+    <Border BackgroundColor="{AppThemeBinding Light={StaticResource CardLight}, Dark={StaticResource CardDark}}"
             StrokeThickness="0"
             VerticalOptions="Center"
             HorizontalOptions="Center"
@@ -15,37 +15,39 @@
         </Border.StrokeShape>
 
         <VerticalStackLayout Padding="20" Spacing="15">
+            <VerticalStackLayout.Resources>
+                <Style TargetType="Button">
+                    <Setter Property="CornerRadius" Value="10" />
+                    <Setter Property="HeightRequest" Value="50" />
+                    <Setter Property="FontAttributes" Value="Bold" />
+                    <Setter Property="BorderColor" Value="Orange" />
+
+                    <Setter Property="BorderWidth" Value="1" />
+
+                    <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource CardLight}, Dark={StaticResource CardDark}}" />
+                    <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}" />
+                </Style>
+            </VerticalStackLayout.Resources>
+
+
             <Label Text="Ustawienia"
-                   TextColor="White"
+                   TextColor="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}"
                    FontSize="22"
                    FontAttributes="Bold"
                    HorizontalOptions="Center"
                    Margin="0,0,0,10"/>
 
             <Button Text="Dodaj stację do autostartu"
-                    Clicked="OnAutostartClicked"
-                    BackgroundColor="#333333"
-                    TextColor="White"
-                    CornerRadius="10"/>
+                    Clicked="OnAutostartClicked"/>
 
             <Button Text="🌍 Zmień język"
-                    Clicked="OnLanguageClicked"
-                    BackgroundColor="#333333"
-                    TextColor="White"
-                    CornerRadius="10"/>
+                    Clicked="OnLanguageClicked"/>
 
             <Button Text="🎨 Zmień motyw"
-                    Clicked="OnThemeClicked"
-                    BackgroundColor="#333333"
-                    TextColor="White"
-                    CornerRadius="10"/>
+                    Clicked="OnThemeClicked"/>
 
             <Button Text="ℹ️ O aplikacji"
                     Clicked="OnAboutClicked"
-                    BackgroundColor="#333333"
-                    TextColor="White"
-                    FontAttributes="Bold"
-                    CornerRadius="10"
                     Margin="0,10,0,0"/>
 
             <Button Text="Zamknij"

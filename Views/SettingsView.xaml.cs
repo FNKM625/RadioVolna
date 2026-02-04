@@ -1,4 +1,6 @@
-﻿namespace RadioVolna.Views;
+﻿using Microsoft.Maui.Controls;
+
+namespace RadioVolna.Views;
 
 public partial class SettingsView : ContentView
 {
@@ -20,9 +22,18 @@ public partial class SettingsView : ContentView
         await DisplayTempAlert("Język", "Wybór języka wkrótce.");
     }
 
-    private async void OnThemeClicked(object sender, EventArgs e)
+    private void OnThemeClicked(object sender, EventArgs e)
     {
-        await DisplayTempAlert("Motyw", "Zmiana motywu wkrótce.");
+        var currentTheme = Application.Current.UserAppTheme;
+
+        if (currentTheme == AppTheme.Unspecified)
+            currentTheme = Application.Current.RequestedTheme;
+
+        var newTheme = currentTheme == AppTheme.Dark ? AppTheme.Light : AppTheme.Dark;
+
+        Application.Current.UserAppTheme = newTheme;
+
+        Preferences.Set("AppTheme", newTheme.ToString());
     }
 
     private async Task DisplayTempAlert(string title, string msg)
