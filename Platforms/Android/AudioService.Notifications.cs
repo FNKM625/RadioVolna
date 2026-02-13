@@ -142,8 +142,18 @@ public partial class AudioService
     {
         private readonly AudioService _service;
         public MediaSessionCallback(AudioService service) => _service = service;
+
         public override void OnPlay() => _service.Resume();
         public override void OnPause() => _service.Pause();
         public override void OnStop() => _service.Stop();
+
+        public override void OnPlayFromMediaId(string mediaId, Bundle extras)
+        {
+            string name = "Radio Volna";
+            var station = RadioVolna.AudioService._autoStations.FirstOrDefault(s => s.Url == mediaId);
+            if (station != null) name = station.DisplayName;
+
+            _service.Play(mediaId, name);
+        }
     }
 }

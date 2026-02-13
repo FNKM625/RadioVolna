@@ -42,7 +42,12 @@ public partial class MainPage : ContentPage
         }
 
         _stationManager.MergeWithFavorites(loadedStations, Stations);
-
+        #if ANDROID
+        if (_audioService is AudioService androidAudioService)
+        {
+            androidAudioService.UpdateStationsForAuto(Stations.ToList());
+        }
+        #endif
         CheckAndRunAutoStart();
     }
 
@@ -177,13 +182,15 @@ public partial class MainPage : ContentPage
 
     private async void OnAboutClicked(object sender, EventArgs e)
     {
-        string v = AppInfo.Current.VersionString;
+        string displayVersion = AppInfo.Current.VersionString;
+        string buildNumber = AppInfo.Current.BuildString;
+        string fullVersion = $"{displayVersion} Build({buildNumber})";
 
         string title = LocalizationResourceManager.Instance["BtnAbout"].Replace("ℹ️ ", "");
         string bodyFormat = LocalizationResourceManager.Instance["MsgAboutBody"];
         string close = LocalizationResourceManager.Instance["BtnClose"];
 
-        await DisplayAlert(title, string.Format(bodyFormat, v), close);
+        await DisplayAlert(title, string.Format(bodyFormat, fullVersion), close);
     }
 
     private void OnExitClicked(object sender, EventArgs e)

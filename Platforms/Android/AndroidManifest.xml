@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="FNKMG.FNKMG" android:versionCode="3" android:versionName="3">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="FNKMG.FNKMG">
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 	<uses-permission android:name="android.permission.INTERNET" />
 	<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -11,5 +11,9 @@
 				 android:icon="@mipmap/appicon" 
 				 android:roundIcon="@mipmap/appicon_round" 
 				 android:supportsRtl="true" 
-				 android:usesCleartextTraffic="true"></application>
+				 android:usesCleartextTraffic="true">
+	</application>
+	
+	<meta-data android:name="com.google.android.gms.car.application"
+               android:resource="@xml/automotive_app_desc"/>
 </manifest>
