@@ -2,15 +2,21 @@
 using Android.App;
 using Android.Content;
 using Android.Media;
-using Android.Media.Session;
 using Android.Net.Wifi;
 using Android.OS;
+using AndroidX.Media;
+using Android.Media.Session;
+using Android.Service.Media;
 using RadioVolna.Resources;
+
 
 namespace RadioVolna;
 
-public partial class AudioService : Java.Lang.Object, IAudioService, AudioManager.IOnAudioFocusChangeListener
+[Service(Exported = true)]
+[IntentFilter(new[] { "android.media.browse.MediaBrowserService" })]
+public partial class AudioService : MediaBrowserServiceCompat, IAudioService, AudioManager.IOnAudioFocusChangeListener
 {
+    private static readonly HttpClient _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
     private Context _context;
     private MediaPlayer? _player;
     private string _lastUrl = "";
@@ -39,6 +45,16 @@ public partial class AudioService : Java.Lang.Object, IAudioService, AudioManage
         InitializeMediaSession();
         CreateNotificationChannel();
         RegisterNotificationReceiver();
+
+        try
+        {
+            if (_mediaSession != null)
+            {
+                var compatToken = Android.Support.V4.Media.Session.MediaSessionCompat.Token.FromToken(_mediaSession.SessionToken);
+                this.SessionToken = compatToken;
+            }
+        }
+        catch { }
     }
 
     // --- LOGIKA HYBRYDOWA ---
@@ -75,6 +91,7 @@ public partial class AudioService : Java.Lang.Object, IAudioService, AudioManage
         }
 
         RegisterNoisyReceiver();
+        _shouldBePlaying = true;
     }
 
     public void Pause()
@@ -113,18 +130,11 @@ public partial class AudioService : Java.Lang.Object, IAudioService, AudioManage
         IsPlayingChanged?.Invoke(this, true);
         StatusChanged?.Invoke(this, LocalizationResourceManager.Instance["StatusPlayingGeneric"]);
         UpdateSystemMediaInfo(true);
-
-        if (!_isUsingExoPlayer && _player != null)
-        {
-            // Jeśli strażnik umarł (bo np. pauza trwała długo), restartujemy go (opcjonalne, ale bezpieczne)
-            // StartMonitoring(_currentUrl);  <-- To wymagałoby przechowywania _currentUrl w klasie
-            // Na razie samo ustawienie _shouldBePlaying = true powinno wystarczyć, 
-            // bo pętla w StartMonitoring kręci się cały czas.
-        }
     }
 
     public void Stop()
     {
+        _shouldBePlaying = false;
         AbandonAudioFocus();
         StopInternal();
         IsPlayingChanged?.Invoke(this, false);
@@ -171,15 +181,27 @@ public partial class AudioService : Java.Lang.Object, IAudioService, AudioManage
 
     private void ReleaseLocks()
     {
-        try { if (_wifiLock != null && _wifiLock.IsHeld) _wifiLock.Release(); } catch { }
-        try { if (_powerWakeLock != null && _powerWakeLock.IsHeld) _powerWakeLock.Release(); } catch { }
+        try
+        {
+            if (_wifiLock != null && _wifiLock.IsHeld) 
+                _wifiLock.Release();
+        }
+        catch { }
+        try
+        {
+            if (_powerWakeLock != null && _powerWakeLock.IsHeld) 
+                _powerWakeLock.Release();
+        }
+        catch { }
     }
 
     private int _retryCount = 0;
-    private const int MaxRetries = 30;
+    public const int MaxRetries = 30;
 
     private async void AttemptReconnect()
     {
+        if (!_shouldBePlaying) return;
+
         _retryCount++;
         string logPrefix = LocalizationResourceManager.Instance["LogReconnectTry"];
         System.Diagnostics.Debug.WriteLine($"[AudioService] {logPrefix} {_retryCount}/{MaxRetries}...");
@@ -189,10 +211,14 @@ public partial class AudioService : Java.Lang.Object, IAudioService, AudioManage
 
         await Task.Delay(3000);
 
-        if (_exoPlayer != null)
+        if (_isUsingExoPlayer && _exoPlayer != null)
         {
             _exoPlayer.Prepare();
             _exoPlayer.PlayWhenReady = true;
+        }
+        else if (!_isUsingExoPlayer && _shouldBePlaying)
+        {
+            Play(_lastUrl, _currentStationName);
         }
     }
 

@@ -49,7 +49,7 @@ public partial class AudioService
 
         private void HandleError(PlaybackException? error)
         {
-            if (_service._retryCount < AudioService.MaxRetries)
+            if (_service._retryCount < RadioVolna.AudioService.MaxRetries)
             {
                 _service.AttemptReconnect();
             }

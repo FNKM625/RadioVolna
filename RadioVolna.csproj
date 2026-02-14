@@ -39,35 +39,44 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-android|AnyCPU'">
-	  <ApplicationVersion>3</ApplicationVersion>
+	  <ApplicationVersion>4</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2</ApplicationDisplayVersion>
+	  <EmbedAssembliesIntoApk>True</EmbedAssembliesIntoApk>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-ios|AnyCPU'">
-	  <ApplicationVersion>3</ApplicationVersion>
+	  <ApplicationVersion>4</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2</ApplicationDisplayVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-maccatalyst|AnyCPU'">
-	  <ApplicationVersion>3</ApplicationVersion>
+	  <ApplicationVersion>4</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2</ApplicationDisplayVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-windows10.0.19041.0|AnyCPU'">
-	  <ApplicationVersion>3</ApplicationVersion>
+	  <ApplicationVersion>4</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2</ApplicationDisplayVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-android|AnyCPU'">
-	  <ApplicationVersion>3</ApplicationVersion>
+	  <ApplicationVersion>4</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2</ApplicationDisplayVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-ios|AnyCPU'">
-	  <ApplicationVersion>3</ApplicationVersion>
+	  <ApplicationVersion>4</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2</ApplicationDisplayVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-maccatalyst|AnyCPU'">
-	  <ApplicationVersion>3</ApplicationVersion>
+	  <ApplicationVersion>4</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2</ApplicationDisplayVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-windows10.0.19041.0|AnyCPU'">
-	  <ApplicationVersion>3</ApplicationVersion>
+	  <ApplicationVersion>4</ApplicationVersion>
+	  <ApplicationDisplayVersion>1.2</ApplicationDisplayVersion>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -93,6 +102,7 @@
 
 	<ItemGroup>
 	  <None Remove="Platforms\Android\Resources\drawable\radio_logo.png" />
+	  <None Remove="Platforms\Android\Resources\xml\automotive_app_desc.xml" />
 	  <None Remove="Resources\AppIcon\appicon.png" />
 	  <None Remove="Resources\Images\logo_radio_volna.png" />
 	  <None Remove="Resources\Splash\splash_logo.png" />
@@ -112,6 +122,7 @@
 		<PackageReference Include="Xamarin.AndroidX.Media3.ExoPlayer" Version="1.2.1" />
 		<PackageReference Include="Xamarin.AndroidX.Media3.Common" Version="1.2.1" />
 		<PackageReference Include="Xamarin.AndroidX.Media3.DataSource" Version="1.2.1" />
+		<PackageReference Include="Xamarin.AndroidX.Media" Version="1.2.1" />
 
 		<PackageReference Include="Xamarin.AndroidX.Collection" Version="1.4.3" />
 		<PackageReference Include="Xamarin.AndroidX.Collection.Ktx" Version="1.4.3" />

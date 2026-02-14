@@ -214,16 +214,13 @@ public partial class AudioService
     {
         try
         {
-            using (var client = new HttpClient())
-            {
-                client.Timeout = TimeSpan.FromSeconds(3);
-                var request = new HttpRequestMessage(HttpMethod.Head, url);
-                var response = await client.SendAsync(request);
-                if (response.Content.Headers.ContentType != null)
-                    return response.Content.Headers.ContentType.MediaType;
-            }
+            var request = new HttpRequestMessage(HttpMethod.Head, url);
+            var response = await _httpClient.SendAsync(request);
+            if (response.Content.Headers.ContentType != null)
+            return response.Content.Headers.ContentType.MediaType;
+            
         }
-        catch { }
+        catch { return "unknown"; }
         return "unknown";
     }
 }
