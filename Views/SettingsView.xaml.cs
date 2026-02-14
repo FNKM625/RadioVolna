@@ -1,6 +1,13 @@
-﻿using Microsoft.Maui.Controls;
-using RadioVolna.Resources;
+﻿using RadioVolna.Resources;
+using Microsoft.Maui.ApplicationModel;
+using Microsoft.Maui.Controls;
 using System.Globalization;
+
+#if ANDROID
+using Android.Content;
+using Android.OS;
+using Android.Provider;
+#endif
 
 namespace RadioVolna.Views;
 
@@ -13,6 +20,72 @@ public partial class SettingsView : ContentView
     public SettingsView()
     {
         InitializeComponent();
+        this.Loaded += OnViewLoaded;
+    }
+
+    private void OnViewLoaded(object? sender, EventArgs e)
+    {
+        CheckBatteryStatus();
+    }
+
+    public void CheckBatteryStatus()
+    {
+    #if ANDROID
+        if (Build.VERSION.SdkInt >= BuildVersionCodes.M)
+        {
+            var context = Platform.CurrentActivity?.ApplicationContext;
+            var packageName = context?.PackageName;
+            var pm = (PowerManager?)context?.GetSystemService(Context.PowerService);
+
+            if (pm != null && packageName != null)
+            {
+                bool isIgnoring = pm.IsIgnoringBatteryOptimizations(packageName);
+
+                if (isIgnoring)
+                {
+                    BatteryBtn.Text = LocalizationResourceManager.Instance["BatteryStatusGood"];
+                    BatteryBtn.TextColor = Colors.LightGreen;
+                    BatteryBtn.BorderColor = Colors.LightGreen;
+                    BatteryBtn.IsEnabled = false;
+                }
+                else
+                {
+                    BatteryBtn.Text = LocalizationResourceManager.Instance["BatteryStatusBad"];
+                    BatteryBtn.TextColor = Colors.Orange;
+                    BatteryBtn.BorderColor = Colors.Orange;
+                    BatteryBtn.IsEnabled = true;
+                }
+                return;
+            }
+        }
+    #endif
+        BatteryBtn.IsVisible = false;
+    }
+
+    private void OnBatterySettingsClicked(object sender, EventArgs e)
+    {
+    #if ANDROID
+        try
+        {
+            var packageName = Platform.CurrentActivity?.ApplicationContext?.PackageName;
+            var intent = new Intent();
+            
+            intent.SetAction(Settings.ActionRequestIgnoreBatteryOptimizations);
+            intent.SetData(Android.Net.Uri.Parse("package:" + packageName));
+            intent.SetFlags(ActivityFlags.NewTask);
+            Platform.CurrentActivity?.StartActivity(intent);
+        }
+        catch
+        {
+            try
+            {
+                var intent = new Intent(Settings.ActionIgnoreBatteryOptimizationSettings);
+                intent.SetFlags(ActivityFlags.NewTask);
+                Platform.CurrentActivity?.StartActivity(intent);
+            }
+            catch { }
+        }
+    #endif
     }
 
     private void OnCloseClicked(object sender, EventArgs e) => CloseRequested?.Invoke(this, EventArgs.Empty);

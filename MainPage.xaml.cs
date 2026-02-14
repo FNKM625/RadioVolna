@@ -138,15 +138,25 @@ public partial class MainPage : ContentPage
     private void OnAutostartOptionClicked(object sender, EventArgs e)
     {
         SettingsOverlayContainer.IsVisible = false;
+
         string currentAutoStartName = Preferences.Get("AutoStartStationName", null);
 
         string noStation = LocalizationResourceManager.Instance["MsgNoStationSelected"];
-
         CurrentAutoStartLabel.Text = string.IsNullOrEmpty(currentAutoStartName) ? noStation : currentAutoStartName;
         CurrentAutoStartLabel.TextColor = string.IsNullOrEmpty(currentAutoStartName) ? Colors.Gray : Color.FromArgb("#03DAC6");
 
-        var filteredList = Stations.Where(s => s.DisplayName != currentAutoStartName).OrderByDescending(s => s.IsFavorite).ToList();
-        AutoStartList.ItemsSource = filteredList;
+        var availableStations = Stations.Where(s => s.DisplayName != currentAutoStartName).ToList();
+
+        var availableFavorites = availableStations.Where(s => s.IsFavorite).ToList();
+
+        if (availableFavorites.Count > 0)
+        {
+            AutoStartList.ItemsSource = availableFavorites.OrderBy(s => s.DisplayName).ToList();
+        }
+        else
+        {
+            AutoStartList.ItemsSource = availableStations.OrderBy(s => s.DisplayName).ToList();
+        }
 
         AutoStartOverlay.IsVisible = true;
     }
@@ -177,7 +187,15 @@ public partial class MainPage : ContentPage
     private void OnCloseAutoStartClicked(object sender, EventArgs e) => AutoStartOverlay.IsVisible = false;
     private void OnOpenListClicked(object sender, EventArgs e) => StationSelectionOverlay.IsVisible = true;
     private void OnCloseListClicked(object sender, EventArgs e) => StationSelectionOverlay.IsVisible = false;
-    private void OnSettingsClicked(object sender, EventArgs e) => SettingsOverlayContainer.IsVisible = true;
+    private void OnSettingsClicked(object sender, EventArgs e)
+    {
+        SettingsOverlayContainer.IsVisible = true;
+
+        if (SettingsOverlayContainer.Children.FirstOrDefault() is Views.SettingsView settingsView)
+        {
+            settingsView.CheckBatteryStatus();
+        }
+    }
     private void OnCloseSettingsClicked(object sender, EventArgs e) => SettingsOverlayContainer.IsVisible = false;
 
     private async void OnAboutClicked(object sender, EventArgs e)

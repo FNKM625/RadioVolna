@@ -16,6 +16,7 @@ namespace RadioVolna;
 [IntentFilter(new[] { "android.media.browse.MediaBrowserService" })]
 public partial class AudioService : MediaBrowserServiceCompat, IAudioService, AudioManager.IOnAudioFocusChangeListener
 {
+    private static readonly HttpClient _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
     private Context _context;
     private MediaPlayer? _player;
     private string _lastUrl = "";

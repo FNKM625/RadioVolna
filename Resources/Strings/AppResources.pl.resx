@@ -243,4 +243,28 @@
   <data name="MsgAboutBody" xml:space="preserve">
     <value>Radio Volna&#10;FNKMG&#10;v{0}&#10;© 2026</value>
   </data>
+  <data name="TitleBatteryOpt" xml:space="preserve">
+    <value>Optymalizacja baterii</value>
+  </data>
+  <data name="MsgBatteryOpt" xml:space="preserve">
+    <value>Aby Radio Volna mogło grać w tle, zmień ustawienia baterii.&#10;&#10;Kliknij 'Ustawienia' i wybierz:&#10;👉 'Bez ograniczeń' lub 'Nie optymalizuj'.</value>
+  </data>
+  <data name="BtnSettings" xml:space="preserve">
+    <value>Ustawienia</value>
+  </data>
+  <data name="BtnSkip" xml:space="preserve">
+    <value>Pomiń</value>
+  </data>
+  <data name="LabelDontAskAgain" xml:space="preserve">
+    <value>Nie pytaj ponownie</value>
+  </data>
+  <data name="MsgBatteryOptToast" xml:space="preserve">
+    <value>Radio może przerywać po zablokowaniu ekranu.</value>
+  </data>
+  <data name="BatteryStatusGood" xml:space="preserve">
+    <value>✅ Bateria: Bez ograniczeń</value>
+  </data>
+  <data name="BatteryStatusBad" xml:space="preserve">
+    <value>⚠️ Bateria: Ograniczona (Napraw)</value>
+  </data>
 </root>

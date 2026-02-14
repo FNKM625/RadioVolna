@@ -47,6 +47,16 @@
             <Button Text="{helpers:Translate BtnTheme}"
                     Clicked="OnThemeClicked"/>
 
+            <Button x:Name="BatteryBtn"
+                    Text="{helpers:Translate BatteryStatusBad}"
+                    Clicked="OnBatterySettingsClicked"
+                    BackgroundColor="Transparent"
+                    TextColor="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}"
+                    HeightRequest="50"
+                    BorderColor="Gray"
+                    BorderWidth="1"
+                    CornerRadius="10"/>
+
             <Button Text="{helpers:Translate BtnAbout}"
                     Clicked="OnAboutClicked"
                     Margin="0,10,0,0"/>

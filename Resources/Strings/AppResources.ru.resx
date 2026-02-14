@@ -243,4 +243,28 @@
   <data name="MsgAboutBody" xml:space="preserve">
     <value>Radio Volna&#10;FNKMG&#10;v{0}&#10;© 2026</value>
   </data>
+  <data name="TitleBatteryOpt" xml:space="preserve">
+    <value>Оптимизация батареи</value>
+  </data>
+  <data name="MsgBatteryOpt" xml:space="preserve">
+    <value>Чтобы радио работало в фоновом режиме, измените настройки батареи.&#10;&#10;Нажмите «Настройки» и выберите:&#10;👉 «Нет ограничений» или «Не экономить».</value>
+  </data>
+  <data name="BtnSettings" xml:space="preserve">
+    <value>Настройки</value>
+  </data>
+  <data name="BtnSkip" xml:space="preserve">
+    <value>Пропустить</value>
+  </data>
+  <data name="LabelDontAskAgain" xml:space="preserve">
+    <value>Больше не спрашивать</value>
+  </data>
+  <data name="MsgBatteryOptToast" xml:space="preserve">
+    <value>Радио может остановиться при блокировке экрана.</value>
+  </data>
+  <data name="BatteryStatusGood" xml:space="preserve">
+    <value>✅ Батарея: Без ограничений</value>
+  </data>
+  <data name="BatteryStatusBad" xml:space="preserve">
+    <value>⚠️ Батарея: Ограничена (Испр.)</value>
+  </data>
 </root>
