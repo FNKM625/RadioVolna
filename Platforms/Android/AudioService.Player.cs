@@ -1,9 +1,9 @@
 ﻿// Plik: Platforms/Android/AudioService.Player.cs
+using System.Diagnostics;
+using System.Net.Http;
 using Android.Content;
 using Android.Media;
 using Android.OS;
-using System.Diagnostics;
-using System.Net.Http;
 using RadioVolna.Resources;
 
 namespace RadioVolna;
@@ -34,16 +34,27 @@ public partial class AudioService
 
             if (Build.VERSION.SdkInt >= BuildVersionCodes.Lollipop)
             {
-                _player.SetAudioAttributes(new AudioAttributes.Builder()
-                    .SetContentType(AudioContentType.Music)
-                    .SetUsage(AudioUsageKind.Media)
-                    .Build());
+                var attrBuilder = new AudioAttributes.Builder();
+                if (attrBuilder != null)
+                {
+                    attrBuilder.SetContentType(AudioContentType.Music);
+                    attrBuilder.SetUsage(AudioUsageKind.Media);
+
+                    var audioAttributes = attrBuilder.Build();
+                    if (audioAttributes != null)
+                        _player.SetAudioAttributes(audioAttributes);
+                }
             }
 
             var uri = Android.Net.Uri.Parse(url);
+            if (uri == null)
+            {
+                Log("Native Exception: uri == null");
+                return;
+            }
             var headers = new Dictionary<string, string>
             {
-                { "User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" }
+                { "User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" },
             };
 
             _player.SetDataSource(_context, uri, headers);
@@ -73,20 +84,27 @@ public partial class AudioService
                 {
                     _isBuffering = true;
                     _bufferingStartTime = DateTime.Now;
-                    StatusChanged?.Invoke(this, LocalizationResourceManager.Instance["StatusBuffering"]);
+                    StatusChanged?.Invoke(
+                        this,
+                        LocalizationResourceManager.Instance["StatusBuffering"]
+                    );
                 }
                 else if (e.What == MediaInfo.BufferingEnd)
                 {
                     _isBuffering = false;
                     _retryCount = 0;
-                    StatusChanged?.Invoke(this, $"{LocalizationResourceManager.Instance["StatusPlaying"]} {_currentStationName}");
+                    StatusChanged?.Invoke(
+                        this,
+                        $"{LocalizationResourceManager.Instance["StatusPlaying"]} {_currentStationName}"
+                    );
                 }
             };
 
             _player.Error += async (s, e) =>
             {
                 Log($"[Native Error Callback] Code: {e.What}");
-                if ((int)e.What == -38) return;
+                if ((int)e.What == -38)
+                    return;
 
                 if (_retryCount < MaxRetries)
                 {
@@ -103,7 +121,10 @@ public partial class AudioService
                 }
                 else
                 {
-                    StatusChanged?.Invoke(this, LocalizationResourceManager.Instance["StatusConnectionError"]);
+                    StatusChanged?.Invoke(
+                        this,
+                        LocalizationResourceManager.Instance["StatusConnectionError"]
+                    );
                     IsPlayingChanged?.Invoke(this, false);
                 }
             };
@@ -116,7 +137,8 @@ public partial class AudioService
             Task.Run(async () =>
             {
                 await Task.Delay(3000);
-                if (_retryCount < MaxRetries) InitializeNativePlayer(url);
+                if (_retryCount < MaxRetries)
+                    InitializeNativePlayer(url);
             });
         }
     }
@@ -136,7 +158,8 @@ public partial class AudioService
         {
             try
             {
-                if (_player.IsPlaying) _player.Stop();
+                if (_player.IsPlaying)
+                    _player.Stop();
                 _player.Release();
             }
             catch { }
@@ -146,7 +169,8 @@ public partial class AudioService
 
     private void StartMonitoring(string url)
     {
-        if (_monitorCts != null) _monitorCts.Cancel();
+        if (_monitorCts != null)
+            _monitorCts.Cancel();
         _monitorCts = new CancellationTokenSource();
         var token = _monitorCts.Token;
 
@@ -156,7 +180,8 @@ public partial class AudioService
             {
                 await Task.Delay(2000, token);
 
-                if (token.IsCancellationRequested) break;
+                if (token.IsCancellationRequested)
+                    break;
 
                 try
                 {
@@ -182,13 +207,19 @@ public partial class AudioService
                             if (_retryCount < MaxRetries)
                             {
                                 _retryCount++;
-                                string weakSignal = LocalizationResourceManager.Instance["StatusWeakSignal"];
+                                string weakSignal = LocalizationResourceManager.Instance[
+                                    "StatusWeakSignal"
+                                ];
                                 string msg = $"{weakSignal} ({_retryCount}/{MaxRetries})";
                                 Log($"[Strażnik] Wykryto problem: {reason}. {msg}");
 
-                                MainThread.BeginInvokeOnMainThread(() => StatusChanged?.Invoke(this, msg));
+                                MainThread.BeginInvokeOnMainThread(() =>
+                                    StatusChanged?.Invoke(this, msg)
+                                );
 
-                                MainThread.BeginInvokeOnMainThread(() => InitializeNativePlayer(url));
+                                MainThread.BeginInvokeOnMainThread(() =>
+                                    InitializeNativePlayer(url)
+                                );
 
                                 break;
                             }
@@ -196,7 +227,10 @@ public partial class AudioService
                             {
                                 MainThread.BeginInvokeOnMainThread(() =>
                                 {
-                                    StatusChanged?.Invoke(this, LocalizationResourceManager.Instance["StatusNoNetwork"]);
+                                    StatusChanged?.Invoke(
+                                        this,
+                                        LocalizationResourceManager.Instance["StatusNoNetwork"]
+                                    );
                                     IsPlayingChanged?.Invoke(this, false);
                                     StopNativePlayer();
                                 });
@@ -216,11 +250,16 @@ public partial class AudioService
         {
             var request = new HttpRequestMessage(HttpMethod.Head, url);
             var response = await _httpClient.SendAsync(request);
-            if (response.Content.Headers.ContentType != null)
-            return response.Content.Headers.ContentType.MediaType;
-            
+
+            var mediaType = response.Content.Headers.ContentType?.MediaType;
+            if (!string.IsNullOrWhiteSpace(mediaType))
+                return mediaType;
+
+            return "unknown";
         }
-        catch { return "unknown"; }
-        return "unknown";
+        catch
+        {
+            return "unknown";
+        }
     }
 }

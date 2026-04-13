@@ -1,7 +1,7 @@
 ﻿using System.Collections.ObjectModel;
-using RadioVolna.Services;
-using RadioVolna.Resources;
 using System.ComponentModel;
+using RadioVolna.Resources;
+using RadioVolna.Services;
 
 namespace RadioVolna;
 
@@ -42,12 +42,12 @@ public partial class MainPage : ContentPage
         }
 
         _stationManager.MergeWithFavorites(loadedStations, Stations);
-        #if ANDROID
+#if ANDROID
         if (_audioService is AudioService androidAudioService)
         {
             androidAudioService.UpdateStationsForAuto(Stations.ToList());
         }
-        #endif
+#endif
         CheckAndRunAutoStart();
     }
 
@@ -61,16 +61,23 @@ public partial class MainPage : ContentPage
 
     // --- PONIŻEJ TYLKO OBSŁUGA UI I ODTWARZANIA ---
 
-    private void OnStatusChanged(object sender, string message)
+    private void OnStatusChanged(object? sender, string message)
     {
         MainThread.BeginInvokeOnMainThread(() =>
         {
             StatusLabel.Text = message;
 
-            bool isError = message.Contains("Błąd") || message.Contains("Error") || message.Contains("Ошибка") ||
-                           message.Contains("Brak") || message.Contains("Słaby");
+            bool isError =
+                message.Contains("Błąd")
+                || message.Contains("Error")
+                || message.Contains("Ошибка")
+                || message.Contains("Brak")
+                || message.Contains("Słaby");
 
-            bool isPlaying = message.Contains("Gra") || message.Contains("Playing") || message.Contains("Играет");
+            bool isPlaying =
+                message.Contains("Gra")
+                || message.Contains("Playing")
+                || message.Contains("Играет");
 
             if (isError)
                 StatusLabel.TextColor = Colors.Orange;
@@ -83,7 +90,7 @@ public partial class MainPage : ContentPage
 
     private async void CheckAndRunAutoStart()
     {
-        string autoStartName = Preferences.Get("AutoStartStationName", null);
+        string? autoStartName = Preferences.Get("AutoStartStationName", (string?)null);
         if (!string.IsNullOrEmpty(autoStartName))
         {
             var station = Stations.FirstOrDefault(s => s.DisplayName == autoStartName);
@@ -139,11 +146,15 @@ public partial class MainPage : ContentPage
     {
         SettingsOverlayContainer.IsVisible = false;
 
-        string currentAutoStartName = Preferences.Get("AutoStartStationName", null);
+        string? currentAutoStartName = Preferences.Get("AutoStartStationName", (string?)null);
 
         string noStation = LocalizationResourceManager.Instance["MsgNoStationSelected"];
-        CurrentAutoStartLabel.Text = string.IsNullOrEmpty(currentAutoStartName) ? noStation : currentAutoStartName;
-        CurrentAutoStartLabel.TextColor = string.IsNullOrEmpty(currentAutoStartName) ? Colors.Gray : Color.FromArgb("#03DAC6");
+        CurrentAutoStartLabel.Text = string.IsNullOrEmpty(currentAutoStartName)
+            ? noStation
+            : currentAutoStartName;
+        CurrentAutoStartLabel.TextColor = string.IsNullOrEmpty(currentAutoStartName)
+            ? Colors.Gray
+            : Color.FromArgb("#03DAC6");
 
         var availableStations = Stations.Where(s => s.DisplayName != currentAutoStartName).ToList();
 
@@ -184,9 +195,15 @@ public partial class MainPage : ContentPage
         }
     }
 
-    private void OnCloseAutoStartClicked(object sender, EventArgs e) => AutoStartOverlay.IsVisible = false;
-    private void OnOpenListClicked(object sender, EventArgs e) => StationSelectionOverlay.IsVisible = true;
-    private void OnCloseListClicked(object sender, EventArgs e) => StationSelectionOverlay.IsVisible = false;
+    private void OnCloseAutoStartClicked(object sender, EventArgs e) =>
+        AutoStartOverlay.IsVisible = false;
+
+    private void OnOpenListClicked(object sender, EventArgs e) =>
+        StationSelectionOverlay.IsVisible = true;
+
+    private void OnCloseListClicked(object sender, EventArgs e) =>
+        StationSelectionOverlay.IsVisible = false;
+
     private void OnSettingsClicked(object sender, EventArgs e)
     {
         SettingsOverlayContainer.IsVisible = true;
@@ -196,7 +213,9 @@ public partial class MainPage : ContentPage
             settingsView.CheckBatteryStatus();
         }
     }
-    private void OnCloseSettingsClicked(object sender, EventArgs e) => SettingsOverlayContainer.IsVisible = false;
+
+    private void OnCloseSettingsClicked(object sender, EventArgs e) =>
+        SettingsOverlayContainer.IsVisible = false;
 
     private async void OnAboutClicked(object sender, EventArgs e)
     {
@@ -228,7 +247,8 @@ public partial class MainPage : ContentPage
         NotificationBadge.IsVisible = false;
         NotificationBadge.InputTransparent = true;
     }
-    private void OnLanguageChanged(object sender, PropertyChangedEventArgs e)
+
+    private void OnLanguageChanged(object? sender, PropertyChangedEventArgs e)
     {
         UpdatePlayPauseText();
     }

@@ -1,9 +1,9 @@
-﻿using Android.OS;
-using AndroidX.Media;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using Android.OS;
 using Android.Service.Media;
-using BrowserRoot = AndroidX.Media.MediaBrowserServiceCompat.BrowserRoot;
 using Android.Support.V4.Media;
+using AndroidX.Media;
+using BrowserRoot = AndroidX.Media.MediaBrowserServiceCompat.BrowserRoot;
 
 namespace RadioVolna;
 
@@ -19,7 +19,11 @@ public partial class AudioService
 
         if (_autoStations.Count > 0)
         {
-            try { NotifyChildrenChanged("root"); } catch { }
+            try
+            {
+                NotifyChildrenChanged("root");
+            }
+            catch { }
         }
     }
 
@@ -40,7 +44,9 @@ public partial class AudioService
         }
         else
         {
-            System.Diagnostics.Debug.WriteLine("[AndroidAuto] Serwis jeszcze nie działa - stacje zapisane w pamięci.");
+            System.Diagnostics.Debug.WriteLine(
+                "[AndroidAuto] Serwis jeszcze nie działa - stacje zapisane w pamięci."
+            );
         }
     }
 
@@ -65,7 +71,10 @@ public partial class AudioService
                     .SetSubtitle("Radio Volna")
                     .Build();
 
-                var item = new MediaBrowserCompat.MediaItem(desc, MediaBrowserCompat.MediaItem.FlagPlayable);
+                var item = new MediaBrowserCompat.MediaItem(
+                    desc,
+                    MediaBrowserCompat.MediaItem.FlagPlayable
+                );
                 mediaItems.Add(item);
             }
         }
@@ -75,7 +84,8 @@ public partial class AudioService
 
     public override void OnDestroy()
     {
-        if (_runningServiceInstance == this) _runningServiceInstance = null;
+        if (_runningServiceInstance == this)
+            _runningServiceInstance = null;
         base.OnDestroy();
     }
 }

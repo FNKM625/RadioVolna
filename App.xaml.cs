@@ -1,5 +1,5 @@
-﻿using RadioVolna.Resources;
-using System.Globalization;
+﻿using System.Globalization;
+using RadioVolna.Resources;
 
 namespace RadioVolna
 {
@@ -9,7 +9,7 @@ namespace RadioVolna
         {
             InitializeComponent();
 
-            string savedLang = Preferences.Get("Language", null);
+            string? savedLang = Preferences.Get("Language", (string?)null);
 
             CultureInfo cultureToSet;
 

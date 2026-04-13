@@ -2,21 +2,26 @@
 using Android.App;
 using Android.Content;
 using Android.Media;
+using Android.Media.Session;
 using Android.Net.Wifi;
 using Android.OS;
-using AndroidX.Media;
-using Android.Media.Session;
 using Android.Service.Media;
+using AndroidX.Media;
 using RadioVolna.Resources;
-
 
 namespace RadioVolna;
 
 [Service(Exported = true)]
 [IntentFilter(new[] { "android.media.browse.MediaBrowserService" })]
-public partial class AudioService : MediaBrowserServiceCompat, IAudioService, AudioManager.IOnAudioFocusChangeListener
+public partial class AudioService
+    : MediaBrowserServiceCompat,
+        IAudioService,
+        AudioManager.IOnAudioFocusChangeListener
 {
-    private static readonly HttpClient _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+    private static readonly HttpClient _httpClient = new HttpClient
+    {
+        Timeout = TimeSpan.FromSeconds(5),
+    };
     private Context _context;
     private MediaPlayer? _player;
     private string _lastUrl = "";
@@ -50,7 +55,10 @@ public partial class AudioService : MediaBrowserServiceCompat, IAudioService, Au
         {
             if (_mediaSession != null)
             {
-                var compatToken = Android.Support.V4.Media.Session.MediaSessionCompat.Token.FromToken(_mediaSession.SessionToken);
+                var compatToken =
+                    Android.Support.V4.Media.Session.MediaSessionCompat.Token.FromToken(
+                        _mediaSession.SessionToken
+                    );
                 this.SessionToken = compatToken;
             }
         }
@@ -75,9 +83,10 @@ public partial class AudioService : MediaBrowserServiceCompat, IAudioService, Au
         AcquireLocks();
 
         string mimeType = await CheckStreamFormatAsync(url);
-        bool isMp3 = mimeType.Equals("audio/mpeg", StringComparison.OrdinalIgnoreCase) ||
-                     mimeType.Equals("audio/mp3", StringComparison.OrdinalIgnoreCase) ||
-                     mimeType.Equals("text/plain", StringComparison.OrdinalIgnoreCase);
+        bool isMp3 =
+            mimeType.Equals("audio/mpeg", StringComparison.OrdinalIgnoreCase)
+            || mimeType.Equals("audio/mp3", StringComparison.OrdinalIgnoreCase)
+            || mimeType.Equals("text/plain", StringComparison.OrdinalIgnoreCase);
 
         if (isMp3)
         {
@@ -98,8 +107,10 @@ public partial class AudioService : MediaBrowserServiceCompat, IAudioService, Au
     {
         _shouldBePlaying = false;
 
-        if (_isUsingExoPlayer) PauseExoPlayer();
-        else if (_player != null && _player.IsPlaying) _player.Pause();
+        if (_isUsingExoPlayer)
+            PauseExoPlayer();
+        else if (_player != null && _player.IsPlaying)
+            _player.Pause();
 
         IsPlayingChanged?.Invoke(this, false);
         StatusChanged?.Invoke(this, LocalizationResourceManager.Instance["NotifPaused"]);
@@ -111,7 +122,8 @@ public partial class AudioService : MediaBrowserServiceCompat, IAudioService, Au
 
     public void Resume()
     {
-        if (!RequestAudioFocus()) return;
+        if (!RequestAudioFocus())
+            return;
         AcquireLocks();
         RegisterNoisyReceiver();
 
@@ -123,8 +135,10 @@ public partial class AudioService : MediaBrowserServiceCompat, IAudioService, Au
         }
         else
         {
-            if (_player != null && !_player.IsPlaying) _player.Start();
-            else Play(_lastUrl, _currentStationName);
+            if (_player != null && !_player.IsPlaying)
+                _player.Start();
+            else
+                Play(_lastUrl, _currentStationName);
         }
 
         IsPlayingChanged?.Invoke(this, true);
@@ -140,7 +154,8 @@ public partial class AudioService : MediaBrowserServiceCompat, IAudioService, Au
         IsPlayingChanged?.Invoke(this, false);
         StatusChanged?.Invoke(this, LocalizationResourceManager.Instance["StatusStopped"]);
         _notificationManager?.Cancel(NotificationId);
-        if (_mediaSession != null) _mediaSession.Active = false;
+        if (_mediaSession != null)
+            _mediaSession.Active = false;
     }
 
     private void StopInternal()
@@ -161,9 +176,14 @@ public partial class AudioService : MediaBrowserServiceCompat, IAudioService, Au
             if (_wifiLock == null)
             {
                 var wm = _context.GetSystemService(Context.WifiService) as WifiManager;
-                if (wm != null) _wifiLock = wm.CreateWifiLock(Android.Net.WifiMode.FullHighPerf, "RadioVolnaWifiLock");
+                if (wm != null)
+                    _wifiLock = wm.CreateWifiLock(
+                        Android.Net.WifiMode.FullHighPerf,
+                        "RadioVolnaWifiLock"
+                    );
             }
-            if (_wifiLock != null && !_wifiLock.IsHeld) _wifiLock.Acquire();
+            if (_wifiLock != null && !_wifiLock.IsHeld)
+                _wifiLock.Acquire();
         }
         catch { }
 
@@ -172,9 +192,11 @@ public partial class AudioService : MediaBrowserServiceCompat, IAudioService, Au
             if (_powerWakeLock == null)
             {
                 var pm = _context.GetSystemService(Context.PowerService) as PowerManager;
-                if (pm != null) _powerWakeLock = pm.NewWakeLock(WakeLockFlags.Partial, "RadioVolnaPowerLock");
+                if (pm != null)
+                    _powerWakeLock = pm.NewWakeLock(WakeLockFlags.Partial, "RadioVolnaPowerLock");
             }
-            if (_powerWakeLock != null && !_powerWakeLock.IsHeld) _powerWakeLock.Acquire();
+            if (_powerWakeLock != null && !_powerWakeLock.IsHeld)
+                _powerWakeLock.Acquire();
         }
         catch { }
     }
@@ -183,13 +205,13 @@ public partial class AudioService : MediaBrowserServiceCompat, IAudioService, Au
     {
         try
         {
-            if (_wifiLock != null && _wifiLock.IsHeld) 
+            if (_wifiLock != null && _wifiLock.IsHeld)
                 _wifiLock.Release();
         }
         catch { }
         try
         {
-            if (_powerWakeLock != null && _powerWakeLock.IsHeld) 
+            if (_powerWakeLock != null && _powerWakeLock.IsHeld)
                 _powerWakeLock.Release();
         }
         catch { }
@@ -200,11 +222,14 @@ public partial class AudioService : MediaBrowserServiceCompat, IAudioService, Au
 
     private async void AttemptReconnect()
     {
-        if (!_shouldBePlaying) return;
+        if (!_shouldBePlaying)
+            return;
 
         _retryCount++;
         string logPrefix = LocalizationResourceManager.Instance["LogReconnectTry"];
-        System.Diagnostics.Debug.WriteLine($"[AudioService] {logPrefix} {_retryCount}/{MaxRetries}...");
+        System.Diagnostics.Debug.WriteLine(
+            $"[AudioService] {logPrefix} {_retryCount}/{MaxRetries}..."
+        );
 
         string weakSignal = LocalizationResourceManager.Instance["StatusWeakSignal"];
         StatusChanged?.Invoke(this, $"{weakSignal} ({_retryCount}/{MaxRetries})");
@@ -221,6 +246,4 @@ public partial class AudioService : MediaBrowserServiceCompat, IAudioService, Au
             Play(_lastUrl, _currentStationName);
         }
     }
-
-
 }
