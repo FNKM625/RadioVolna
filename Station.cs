@@ -38,4 +38,20 @@ public class Station : INotifyPropertyChanged
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
+
+    private bool _isPreviewing;
+
+    [JsonIgnore]
+    public bool IsPreviewing
+    {
+        get => _isPreviewing;
+        set
+        {
+            if (_isPreviewing != value)
+            {
+                _isPreviewing = value;
+                OnPropertyChanged();
+            }
+        }
+    }
 }

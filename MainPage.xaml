@@ -215,5 +215,18 @@
                                     SaveClicked="OnCustomStationSaveClicked"
                                     CancelClicked="OnCustomStationCancelClicked"/>
 
+        <views:SearchStationView x:Name="SearchStationFilterOverlay"
+                                 Grid.RowSpan="3"
+                                 IsOpen="False"
+                                 SearchClicked="OnExecuteApiSearchClicked"
+                                 CancelClicked="OnCancelApiSearchClicked"/>
+
+        <views:SearchStationResultsView x:Name="SearchStationResultsOverlay"
+                                        Grid.RowSpan="3"
+                                        IsOpen="False"
+                                        PreviewClicked="OnSearchResultPreviewClicked"
+                                        AddClicked="OnSearchResultAddClicked"
+                                        CloseClicked="OnSearchResultsCloseClicked"/>
+
     </Grid>
 </ContentPage>

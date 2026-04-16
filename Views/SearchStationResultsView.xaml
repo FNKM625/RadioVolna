@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="RadioVolna.Views.SearchStationResultsView"
+             x:Name="this">
+
+    <Grid IsVisible="{Binding IsOpen, Source={x:Reference this}}"
+          BackgroundColor="#CC000000"
+          Padding="20">
+        <Border BackgroundColor="{AppThemeBinding Light={StaticResource CardLight}, Dark={StaticResource CardDark}}"
+                StrokeThickness="0"
+                VerticalOptions="Center"
+                HorizontalOptions="Center"
+                MaximumWidthRequest="380"
+                MaximumHeightRequest="520"
+                Padding="20">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="20"/>
+            </Border.StrokeShape>
+
+            <Grid RowDefinitions="Auto,*,Auto"
+                  RowSpacing="12">
+                <Label Grid.Row="0"
+                       Text="Wyniki wyszukiwania"
+                       FontSize="22"
+                       FontAttributes="Bold"
+                       HorizontalOptions="Center"
+                       TextColor="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}"/>
+
+                <CollectionView Grid.Row="1"
+                                x:Name="ResultsList"
+                                SelectionMode="None">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border Stroke="Transparent"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource CardLightD}, Dark={StaticResource CardDarkL}}"
+                                    Padding="10"
+                                    Margin="0,5">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="8"/>
+                                </Border.StrokeShape>
+
+                                <Grid ColumnDefinitions="*,Auto,Auto"
+                                      ColumnSpacing="8">
+                                    <Label Grid.Column="0"
+                                           Text="{Binding DisplayName}"
+                                           FontSize="16"
+                                           FontAttributes="Bold"
+                                           VerticalOptions="Center"
+                                           TextColor="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}"/>
+
+                                    <Button Grid.Column="1"
+                                            Text="▶"
+                                            WidthRequest="40"
+                                            Clicked="OnPreviewClicked"
+                                            CommandParameter="{Binding .}"
+                                            VerticalOptions="Center">
+                                        <Button.Triggers>
+                                            <DataTrigger TargetType="Button"
+                                                    Binding="{Binding IsPreviewing}"
+                                                    Value="True">
+                                                <Setter Property="Text"
+                                                        Value="⏹"/>
+                                                <Setter Property="TextColor"
+                                                        Value="Orange"/>
+                                            </DataTrigger>
+                                        </Button.Triggers>
+                                    </Button>
+
+                                    <Button Grid.Column="2"
+                                            Text="Dodaj"
+                                            BackgroundColor="#03DAC6"
+                                            TextColor="Black"
+                                            Clicked="OnAddClicked"
+                                            CommandParameter="{Binding .}"
+                                            VerticalOptions="Center"/>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <Button Grid.Row="2"
+                        Text="Zamknij"
+                        BackgroundColor="Transparent"
+                        TextColor="#FF5555"
+                        Clicked="OnCloseClicked"/>
+            </Grid>
+        </Border>
+    </Grid>
+</ContentView>

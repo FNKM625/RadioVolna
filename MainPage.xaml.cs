@@ -8,13 +8,11 @@ namespace RadioVolna;
 public partial class MainPage : ContentPage
 {
     private readonly IAudioService _audioService;
-
     private readonly StationService _stationService = new StationService();
     private readonly StationManager _stationManager = new StationManager();
-
     private bool _isPlaying = false;
-
     public ObservableCollection<Station> Stations { get; set; } = new();
+    private Station _stationBeforePreview;
 
     public MainPage(IAudioService audioService)
     {
@@ -316,8 +314,8 @@ public partial class MainPage : ContentPage
 
     private void OnSearchStationClicked(object sender, EventArgs e)
     {
-        // Tutaj w przyszłości otworzysz wyszukiwarkę stacji (np. z Radio Browser API)
-        DisplayAlert("Info", "Otwieram okno wyszukiwania...", "OK");
+        SearchStationFilterOverlay.Reset();
+        SearchStationFilterOverlay.IsOpen = true;
     }
 
     // --- OBSŁUGA DODAWANIA WŁASNEJ STACJI ---
@@ -395,5 +393,143 @@ public partial class MainPage : ContentPage
 
         // Zamykamy overlay formularza
         AddCustomStationOverlay.IsOpen = false;
+    }
+
+    // --- OBSŁUGA WYSZUKIWANIA W BAZIE (RADIO BROWSER) ---
+
+    private void OnCancelApiSearchClicked(object sender, EventArgs e)
+    {
+        SearchStationFilterOverlay.IsOpen = false;
+    }
+
+    private async void OnExecuteApiSearchClicked(object sender, EventArgs e)
+    {
+        string name = SearchStationFilterOverlay.SearchName;
+        string country = SearchStationFilterOverlay.SearchCountry;
+        string tags = SearchStationFilterOverlay.SearchTags;
+
+        // Minimum jedno pole musi być uzupełnione
+        if (
+            string.IsNullOrWhiteSpace(name)
+            && string.IsNullOrWhiteSpace(country)
+            && string.IsNullOrWhiteSpace(tags)
+        )
+        {
+            await DisplayAlert("Błąd", "Wypełnij przynajmniej jedno pole wyszukiwania.", "OK");
+            return;
+        }
+
+        SearchStationFilterOverlay.IsOpen = false;
+        StatusLabel.Text = "Przeszukiwanie globalnej bazy...";
+        StatusLabel.TextColor = Colors.LightBlue;
+
+        // Pobieranie wyników z API
+        var results = await _stationService.SearchRadioBrowserAsync(name, country, tags);
+
+        // FILTROWANIE: Usuwamy z wyników stacje, które już mamy na głównej liście (po URL)
+        var filteredResults = results
+            .Where(apiStation => !Stations.Any(myStation => myStation.Url == apiStation.Url))
+            .ToList();
+
+        StatusLabel.Text = LocalizationResourceManager.Instance["StatusReady"];
+
+        if (filteredResults.Count == 0)
+        {
+            await DisplayAlert(
+                "Brak nowych stacji",
+                "Wszystkie znalezione stacje są już na Twojej liście.",
+                "OK"
+            );
+            return;
+        }
+
+        SearchStationResultsOverlay.SetItems(filteredResults);
+        SearchStationResultsOverlay.IsOpen = true;
+    }
+
+    private void OnSearchResultPreviewClicked(object sender, Station selectedStation)
+    {
+        if (selectedStation.IsPreviewing)
+        {
+            // JEŚLI JUŻ GRA DEMO TEJ STACJI -> ZATRZYMUJEMY I WRACAMY DO POPRZEDNIEJ
+            StopPreviewAndResumePrevious(selectedStation);
+        }
+        else
+        {
+            // Zatrzymujemy inne demo, jeśli jakieś grało
+            if (SearchStationResultsOverlay.CurrentStations != null)
+            {
+                foreach (var s in SearchStationResultsOverlay.CurrentStations)
+                    s.IsPreviewing = false;
+            }
+
+            // Jeśli to pierwsze demo w tej sesji, zapamiętaj co grało normalnie
+            if (_stationBeforePreview == null)
+            {
+                // Szukamy aktualnie grającej stacji po nazwie z labela
+                _stationBeforePreview = Stations.FirstOrDefault(s =>
+                    s.DisplayName == CurrentStationLabel.Text
+                );
+            }
+
+            selectedStation.IsPreviewing = true;
+            _audioService.Play(selectedStation.Url, $"Demo: {selectedStation.DisplayName}");
+
+            StatusLabel.Text = "Tryb podglądu...";
+            StatusLabel.TextColor = Colors.Orange;
+        }
+    }
+
+    private void StopPreviewAndResumePrevious(Station station)
+    {
+        station.IsPreviewing = false;
+
+        if (_stationBeforePreview != null)
+        {
+            // Wznawiamy stację, która grała wcześniej
+            PlayStation(_stationBeforePreview);
+            _stationBeforePreview = null; // Resetujemy pamięć
+        }
+        else
+        {
+            // Jeśli nic nie grało, po prostu zatrzymaj audio
+            _audioService.Stop();
+            StatusLabel.Text = LocalizationResourceManager.Instance["StatusReady"];
+            StatusLabel.TextColor = Colors.Gray;
+        }
+    }
+
+    private void OnSearchResultAddClicked(object sender, Station station)
+    {
+        // Sprawdzamy czy stacja o takim samym linku już jest w naszych ulubionych/własnych
+        if (Stations.Any(s => s.Url == station.Url))
+        {
+            DisplayAlert("Info", "Ta stacja jest już na Twojej liście.", "OK");
+            return;
+        }
+
+        // Dodanie stacji (używamy mechanizmu zapisu z poprzednich wiadomości)
+        Stations.Add(station);
+        _stationManager.SaveCustomStation(station); // Zapis do JSON
+
+        DisplayAlert(
+            "Sukces",
+            $"Stacja '{station.DisplayName}' została dodana do Twojej listy!",
+            "OK"
+        );
+    }
+
+    private void OnSearchResultsCloseClicked(object sender, EventArgs e)
+    {
+        SearchStationResultsOverlay.IsOpen = false;
+
+        // Resetujemy wszystkie stany previewing na liście
+        var list = SearchStationResultsOverlay.CurrentStations;
+        var previewingStation = list?.FirstOrDefault(s => s.IsPreviewing);
+
+        if (previewingStation != null)
+        {
+            StopPreviewAndResumePrevious(previewingStation);
+        }
     }
 }
