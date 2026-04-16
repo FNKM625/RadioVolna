@@ -13,6 +13,48 @@ public class Station : INotifyPropertyChanged
     [JsonPropertyName("value")]
     public string Url { get; set; } = string.Empty;
 
+    // --- GRAFIKA I EMOJI ---
+
+    private string _faviconUrl = string.Empty;
+    public string FaviconUrl
+    {
+        get => _faviconUrl;
+        set
+        {
+            if (_faviconUrl != value)
+            {
+                _faviconUrl = value;
+                OnPropertyChanged();
+                // Informujemy widok, że zmieniły się ostateczne dane do wyświetlenia
+                OnPropertyChanged(nameof(DisplayFavicon));
+                OnPropertyChanged(nameof(DisplayEmoji));
+            }
+        }
+    }
+
+    public string CountryEmoji { get; set; } = string.Empty;
+
+    [JsonPropertyName("emoji")]
+    public string Emoji { get; set; } = string.Empty;
+
+    // --- C# DECYDUJE CO WYŚWIETLIĆ (ZAMIAST IsVisible) ---
+
+    [JsonIgnore]
+    public string DisplayFavicon => string.IsNullOrWhiteSpace(FaviconUrl) ? "" : FaviconUrl;
+
+    [JsonIgnore]
+    public string DisplayEmoji
+    {
+        get
+        {
+            // 1. Jeśli mamy link do obrazka, ukrywamy tekst (zwracamy pusty string)
+            if (!string.IsNullOrWhiteSpace(FaviconUrl))
+                return "";
+
+            return string.IsNullOrWhiteSpace(CountryEmoji) ? "📻" : CountryEmoji;
+        }
+    }
+
     // --- 2. DANE APLIKACJI ---
     [JsonIgnore]
     public string DisplayName { get; set; } = string.Empty;

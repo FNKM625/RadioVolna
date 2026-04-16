@@ -54,19 +54,25 @@ public class StationService
 
                 foreach (var element in document.RootElement.EnumerateArray())
                 {
-                    // RadioBrowser API ma inne nazwy pól (name zamiast label, url_resolved zamiast value)
                     var stationName =
                         element.GetProperty("name").GetString()?.Trim() ?? "Nieznana stacja";
                     var streamUrl = element.GetProperty("url_resolved").GetString() ?? string.Empty;
+
+                    // NOWE: Pobieranie linku do ikony i kodu państwa
+                    var favicon = element.GetProperty("favicon").GetString() ?? string.Empty;
+                    var countryCode =
+                        element.GetProperty("countrycode").GetString() ?? string.Empty;
 
                     if (!string.IsNullOrWhiteSpace(streamUrl))
                     {
                         results.Add(
                             new Station
                             {
-                                Name = stationName, // zapisywane do lokalnego pliku JSON
-                                DisplayName = stationName, // pokazywane w UI
+                                Name = stationName,
+                                DisplayName = stationName,
                                 Url = streamUrl,
+                                FaviconUrl = favicon, // Zapisujemy link do logo
+                                CountryEmoji = GetFlagEmoji(countryCode), // Generujemy flagę
                                 IsFavorite = false,
                             }
                         );
@@ -80,5 +86,28 @@ public class StationService
             System.Diagnostics.Debug.WriteLine($"Błąd API: {ex.Message}");
         }
         return new List<Station>();
+    }
+
+    private string GetFlagEmoji(string countryCode)
+    {
+        // Jeśli brak kodu kraju lub jest za krótki, zwracamy domyślne emoji "muzyka" lub "radio"
+        if (string.IsNullOrWhiteSpace(countryCode) || countryCode.Length != 2)
+            return "🎵"; // To będzie Twój "ostateczny" fallback
+
+        try
+        {
+            countryCode = countryCode.ToUpper();
+            int flagOffset = 0x1F1E6;
+            int asciiOffset = 0x41;
+
+            int firstChar = countryCode[0] - asciiOffset + flagOffset;
+            int secondChar = countryCode[1] - asciiOffset + flagOffset;
+
+            return char.ConvertFromUtf32(firstChar) + char.ConvertFromUtf32(secondChar);
+        }
+        catch
+        {
+            return "📻"; // Fallback w razie jakiegokolwiek błędu konwersji
+        }
     }
 }
