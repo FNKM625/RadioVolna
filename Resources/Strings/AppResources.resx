@@ -267,4 +267,46 @@
   <data name="BatteryStatusBad" xml:space="preserve">
     <value>⚠️ Battery: Restricted (Tap to fix)</value>
   </data>
+  <data name="TitleAddStation" xml:space="preserve">
+   <value>Add station</value>
+  </data>
+  <data name="TitleAddCustomStation" xml:space="preserve"><value>Add custom station</value></data>
+  <data name="TitleSearchStations" xml:space="preserve"><value>Search stations</value></data>
+  <data name="TitleSearchResults" xml:space="preserve"><value>Search results</value></data>
+  <data name="BtnAddCustom" xml:space="preserve"><value>Add custom</value></data>
+  <data name="BtnSearch" xml:space="preserve"><value>Search</value></data>
+  <data name="BtnAdd" xml:space="preserve"><value>Add</value></data>
+  <data name="PlaceholderStationName" xml:space="preserve"><value>Station name</value></data>
+  <data name="PlaceholderStreamUrl" xml:space="preserve"><value>Stream link (http/https)</value></data>
+  <data name="PlaceholderEmoji" xml:space="preserve"><value>Emoji (optional)</value></data>
+  <data name="PlaceholderSearchName" xml:space="preserve"><value>Name / keyword</value></data>
+  <data name="PlaceholderSearchCountry" xml:space="preserve"><value>Country, language or code</value></data>
+  <data name="PlaceholderSearchTags" xml:space="preserve"><value>Tags, e.g. rock, news</value></data>
+  <data name="LabelDeleteMode" xml:space="preserve"><value>Delete mode</value></data>
+  <data name="DialogDeleteTitle" xml:space="preserve"><value>Delete station</value></data>
+  <data name="DialogDeleteMsg" xml:space="preserve"><value>Are you sure you want to delete the station '{0}'?</value></data>
+  <data name="DialogYes" xml:space="preserve"><value>Yes</value></data>
+  <data name="DialogNo" xml:space="preserve"><value>No</value></data>
+  <data name="DialogErrorTitle" xml:space="preserve"><value>Error</value></data>
+  <data name="DialogSuccessTitle" xml:space="preserve"><value>Success</value></data>
+  <data name="DialogInfoTitle" xml:space="preserve"><value>Info</value></data>
+  <data name="ErrorProvideLink" xml:space="preserve"><value>Provide a stream link to test it.</value></data>
+  <data name="ErrorStationNameReq" xml:space="preserve"><value>Station name is required.</value></data>
+  <data name="ErrorInvalidLink" xml:space="preserve"><value>The provided link is invalid. Make sure it contains http:// or https:// and has no spaces.</value></data>
+  <data name="ErrorFillOneField" xml:space="preserve"><value>Fill in at least one search field.</value></data>
+  <data name="MsgStationAdded" xml:space="preserve"><value>Station '{0}' has been added!</value></data>
+  <data name="MsgStationExists" xml:space="preserve"><value>This station is already on your list.</value></data>
+  <data name="TitleNoResults" xml:space="preserve"><value>No results</value></data>
+  <data name="MsgNoStationsFound" xml:space="preserve"><value>No stations found matching these criteria.</value></data>
+  <data name="TitleNoNewStations" xml:space="preserve"><value>No new stations</value></data>
+  <data name="MsgAllStationsOnList" xml:space="preserve"><value>All found stations are already on your list.</value></data>
+  <data name="StatusTestingLink" xml:space="preserve"><value>Testing custom link...</value></data>
+  <data name="StatusSearchingDb" xml:space="preserve"><value>Searching global database...</value></data>
+  <data name="StatusPreviewMode" xml:space="preserve"><value>Preview mode...</value></data>
+  <data name="PlaceholderCountry" xml:space="preserve">
+    <value>Country, language or code</value>
+  </data>
+  <data name="PlaceholderTags" xml:space="preserve">
+    <value>Tags, e.g. rock, news</value>
+  </data>
 </root>

@@ -267,4 +267,44 @@
   <data name="BatteryStatusBad" xml:space="preserve">
     <value>⚠️ Батарея: Ограничена (Испр.)</value>
   </data>
+  <data name="TitleAddStation" xml:space="preserve"><value>Добавить станцию</value></data>
+  <data name="TitleAddCustomStation" xml:space="preserve"><value>Добавить свою станцию</value></data>
+  <data name="TitleSearchStations" xml:space="preserve"><value>Поиск станций</value></data>
+  <data name="TitleSearchResults" xml:space="preserve"><value>Результаты поиска</value></data>
+  <data name="BtnAddCustom" xml:space="preserve"><value>Добавить свою</value></data>
+  <data name="BtnSearch" xml:space="preserve"><value>Поиск</value></data>
+  <data name="BtnAdd" xml:space="preserve"><value>Добавить</value></data>
+  <data name="PlaceholderStationName" xml:space="preserve"><value>Название станции</value></data>
+  <data name="PlaceholderStreamUrl" xml:space="preserve"><value>Ссылка на поток</value></data>
+  <data name="PlaceholderEmoji" xml:space="preserve"><value>Эмодзи (необязательно)</value></data>
+  <data name="PlaceholderSearchName" xml:space="preserve"><value>Название / ключевое слово</value></data>
+  <data name="PlaceholderSearchCountry" xml:space="preserve"><value>Страна, язык или код</value></data>
+  <data name="PlaceholderSearchTags" xml:space="preserve"><value>Теги, напр. rock, news</value></data>
+  <data name="LabelDeleteMode" xml:space="preserve"><value>Режим удаления</value></data>
+  <data name="DialogDeleteTitle" xml:space="preserve"><value>Удаление станции</value></data>
+  <data name="DialogDeleteMsg" xml:space="preserve"><value>Вы уверены, что хотите удалить станцию '{0}'?</value></data>
+  <data name="DialogYes" xml:space="preserve"><value>Да</value></data>
+  <data name="DialogNo" xml:space="preserve"><value>Нет</value></data>
+  <data name="DialogErrorTitle" xml:space="preserve"><value>Ошибка</value></data>
+  <data name="DialogSuccessTitle" xml:space="preserve"><value>Успех</value></data>
+  <data name="DialogInfoTitle" xml:space="preserve"><value>Информация</value></data>
+  <data name="ErrorProvideLink" xml:space="preserve"><value>Укажите ссылку на поток, чтобы проверить её.</value></data>
+  <data name="ErrorStationNameReq" xml:space="preserve"><value>Название станции обязательно.</value></data>
+  <data name="ErrorInvalidLink" xml:space="preserve"><value>Ссылка недействительна. Убедитесь, что она содержит http:// или https://.</value></data>
+  <data name="ErrorFillOneField" xml:space="preserve"><value>Заполните хотя бы одно поле поиска.</value></data>
+  <data name="MsgStationAdded" xml:space="preserve"><value>Станция '{0}' добавлена!</value></data>
+  <data name="MsgStationExists" xml:space="preserve"><value>Эта станция уже есть в вашем списке.</value></data>
+  <data name="TitleNoResults" xml:space="preserve"><value>Нет результатов</value></data>
+  <data name="MsgNoStationsFound" xml:space="preserve"><value>Станции, соответствующие этим критериям, не найдены.</value></data>
+  <data name="TitleNoNewStations" xml:space="preserve"><value>Нет новых станций</value></data>
+  <data name="MsgAllStationsOnList" xml:space="preserve"><value>Все найденные станции уже есть в вашем списке.</value></data>
+  <data name="StatusTestingLink" xml:space="preserve"><value>Проверка своей ссылки...</value></data>
+  <data name="StatusSearchingDb" xml:space="preserve"><value>Поиск в базе...</value></data>
+  <data name="StatusPreviewMode" xml:space="preserve"><value>Режим предпросмотра...</value></data>
+  <data name="PlaceholderCountry" xml:space="preserve">
+    <value>Страна, язык или код</value>
+  </data>
+  <data name="PlaceholderTags" xml:space="preserve">
+    <value>Теги, напр. rock, news</value>
+  </data>
 </root>

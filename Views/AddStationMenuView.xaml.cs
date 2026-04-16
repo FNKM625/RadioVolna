@@ -19,8 +19,8 @@ public partial class AddStationMenuView : ContentView
     }
 
     // Zdarzenia, na które będziemy reagować w MainPage
-    public event EventHandler AddCustomClicked;
-    public event EventHandler SearchClicked;
+    public event EventHandler? AddCustomClicked;
+    public event EventHandler? SearchClicked;
 
     public AddStationMenuView()
     {

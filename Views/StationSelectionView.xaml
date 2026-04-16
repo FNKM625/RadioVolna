@@ -29,7 +29,7 @@
                                        HorizontalOptions="Center"
                                        Spacing="10"
                                        Margin="0,0,0,15">
-                    <Label Text="Tryb usuwania"
+                    <Label Text="{helpers:Translate LabelDeleteMode}"
                            VerticalOptions="Center"
                            TextColor="Gray"
                            FontSize="14"/>
@@ -54,9 +54,9 @@
                                       ColumnSpacing="12">
 
                                     <Grid Grid.Column="0"
-                                            WidthRequest="40"
-                                            HeightRequest="40"
-                                            VerticalOptions="Center">
+                                          WidthRequest="40"
+                                          HeightRequest="40"
+                                          VerticalOptions="Center">
 
                                         <Label Text="{Binding DisplayEmoji}"
                                                FontSize="24"
@@ -71,7 +71,7 @@
                                                VerticalOptions="Center">
                                             <Image.Clip>
                                                 <RoundRectangleGeometry CornerRadius="8"
-                                                        Rect="0,0,40,40"/>
+                                                                        Rect="0,0,40,40"/>
                                             </Image.Clip>
                                         </Image>
                                     </Grid>

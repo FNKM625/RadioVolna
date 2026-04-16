@@ -6,10 +6,10 @@ namespace RadioVolna.Views;
 public partial class StationSelectionView : ContentView
 {
     // Zdarzenia, na które będzie nasłuchiwać MainPage
-    public event EventHandler<Station> StationSelected;
-    public event EventHandler<Station> FavoriteClicked;
-    public event EventHandler<Station> DeleteClicked;
-    public event EventHandler CloseRequested;
+    public event EventHandler<Station>? StationSelected;
+    public event EventHandler<Station>? FavoriteClicked;
+    public event EventHandler<Station>? DeleteClicked;
+    public event EventHandler? CloseRequested;
 
     public StationSelectionView()
     {

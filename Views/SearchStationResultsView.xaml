@@ -2,6 +2,7 @@
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="RadioVolna.Views.SearchStationResultsView"
+             xmlns:helpers="clr-namespace:RadioVolna.Resources"
              x:Name="this">
 
     <Grid IsVisible="{Binding IsOpen, Source={x:Reference this}}"
@@ -21,7 +22,7 @@
             <Grid RowDefinitions="Auto,*,Auto"
                   RowSpacing="12">
                 <Label Grid.Row="0"
-                       Text="Wyniki wyszukiwania"
+                       Text="{helpers:Translate TitleSearchResults}"
                        FontSize="22"
                        FontAttributes="Bold"
                        HorizontalOptions="Center"
@@ -92,7 +93,7 @@
                                     </Button>
 
                                     <Button Grid.Column="3"
-                                            Text="Dodaj"
+                                            Text="{helpers:Translate BtnAdd}"
                                             BackgroundColor="#03DAC6"
                                             TextColor="Black"
                                             Clicked="OnAddClicked"
@@ -105,7 +106,7 @@
                 </CollectionView>
 
                 <Button Grid.Row="2"
-                        Text="Zamknij"
+                        Text="{helpers:Translate DialogClose}"
                         BackgroundColor="Transparent"
                         TextColor="#FF5555"
                         Clicked="OnCloseClicked"/>

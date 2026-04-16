@@ -30,6 +30,6 @@ namespace RadioVolna.Resources
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(null));
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
     }
 }

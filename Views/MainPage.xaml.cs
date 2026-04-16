@@ -12,7 +12,7 @@ public partial class MainPage : ContentPage
     private readonly StationManager _stationManager = new StationManager();
     private bool _isPlaying = false;
     public ObservableCollection<Station> Stations { get; set; } = new();
-    private Station _stationBeforePreview;
+    private Station? _stationBeforePreview;
 
     public MainPage(IAudioService audioService)
     {
@@ -28,7 +28,6 @@ public partial class MainPage : ContentPage
 
     private async void LoadStations()
     {
-        // 1. Ładowanie domyślnych stacji (np. z API lub pliku bazy)
         var loadedStations = await _stationService.GetStationsAsync();
 
         if (loadedStations.Count == 0)
@@ -40,14 +39,11 @@ public partial class MainPage : ContentPage
             return;
         }
 
-        // 2. Scalanie domyślnych stacji z ulubionymi
         _stationManager.MergeWithFavorites(loadedStations, Stations);
 
-        // NOWE: 3. Ładowanie własnych stacji użytkownika
         var customStations = _stationManager.LoadCustomStations();
         foreach (var customStation in customStations)
         {
-            // Upewniamy się, że nie dodajemy duplikatów, jeśli URL już jest na liście
             if (!Stations.Any(s => s.Url == customStation.Url))
             {
                 Stations.Add(customStation);
@@ -271,23 +267,23 @@ public partial class MainPage : ContentPage
 
     private async void OnStationSelectionView_DeleteClicked(object sender, Station station)
     {
-        // Wyświetlenie okna z pytaniem o potwierdzenie
+        string title = LocalizationResourceManager.Instance["DialogDeleteTitle"];
+        string msgFormat = LocalizationResourceManager.Instance["DialogDeleteMsg"];
+        string yes = LocalizationResourceManager.Instance["DialogYes"];
+        string no = LocalizationResourceManager.Instance["DialogNo"];
+
         bool answer = await DisplayAlert(
-            "Usuwanie stacji",
-            $"Czy na pewno chcesz usunąć stację '{station.DisplayName}'?",
-            "Tak",
-            "Nie"
+            title,
+            string.Format(msgFormat, station.DisplayName),
+            yes,
+            no
         );
 
         if (answer)
         {
-            // 1. Usuwamy z pliku JSON (jeśli to stacja własna)
             _stationManager.DeleteCustomStation(station);
-
-            // 2. Usuwamy z aktualnie wyświetlanej listy w aplikacji
             Stations.Remove(station);
 
-            // Opcjonalnie: jeśli usunięta stacja była aktualnie odtwarzana, możemy zatrzymać radio
             if (CurrentStationLabel.Text == station.DisplayName)
             {
                 _audioService.Stop();
@@ -301,13 +297,11 @@ public partial class MainPage : ContentPage
 
     private void OnOpenAddStationMenuClicked(object sender, EventArgs e)
     {
-        // Otwiera menu (zmienia właściwość IsOpen, co wyświetla Grid w Twoim XAML)
         AddStationMenuOverlay.IsOpen = true;
     }
 
     private void OnAddCustomStationClicked(object sender, EventArgs e)
     {
-        // Czyścimy formularz przed wyświetleniem i otwieramy overlay
         AddCustomStationOverlay.ClearForm();
         AddCustomStationOverlay.IsOpen = true;
     }
@@ -325,57 +319,57 @@ public partial class MainPage : ContentPage
         AddCustomStationOverlay.IsOpen = false;
     }
 
-    private void OnCustomStationPreviewClicked(object sender, EventArgs e)
+    private async void OnCustomStationPreviewClicked(object sender, EventArgs e)
     {
         string url = AddCustomStationOverlay.StationUrl;
         string name = AddCustomStationOverlay.StationName;
 
         if (string.IsNullOrWhiteSpace(url))
         {
-            DisplayAlert("Błąd", "Podaj link do streamu, aby go przetestować.", "OK");
+            await DisplayAlert(
+                LocalizationResourceManager.Instance["DialogErrorTitle"],
+                LocalizationResourceManager.Instance["ErrorProvideLink"],
+                "OK"
+            );
             return;
         }
 
-        // Odtwarzanie próbne - używamy nazwy, a jeśli jej nie ma, wpisujemy domyślną
         _audioService.Play(url, string.IsNullOrWhiteSpace(name) ? "Test streamu..." : name);
-
-        // Ręcznie symulujemy stan na interfejsie
-        StatusLabel.Text = "Testowanie własnego linku...";
+        StatusLabel.Text = LocalizationResourceManager.Instance["StatusTestingLink"];
         StatusLabel.TextColor = Colors.LightBlue;
     }
 
-    private void OnCustomStationSaveClicked(object sender, EventArgs e)
+    private async void OnCustomStationSaveClicked(object sender, EventArgs e)
     {
         string name = AddCustomStationOverlay.StationName;
         string url = AddCustomStationOverlay.StationUrl;
         string emoji = AddCustomStationOverlay.StationEmoji;
 
-        // 1. Walidacja nazwy (nie może być pusta)
         if (string.IsNullOrWhiteSpace(name))
         {
-            DisplayAlert("Błąd", "Nazwa stacji jest wymagana.", "OK");
+            await DisplayAlert(
+                LocalizationResourceManager.Instance["DialogErrorTitle"],
+                LocalizationResourceManager.Instance["ErrorStationNameReq"],
+                "OK"
+            );
             return;
         }
 
-        // 2. Walidacja URL
         bool isValidUrl =
             Uri.TryCreate(url, UriKind.Absolute, out Uri? uriResult)
             && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
 
         if (!isValidUrl)
         {
-            DisplayAlert(
-                "Błąd",
-                "Podany link jest niepoprawny. Upewnij się, że zawiera przedrostek http:// lub https:// i nie ma w nim spacji.",
+            await DisplayAlert(
+                LocalizationResourceManager.Instance["DialogErrorTitle"],
+                LocalizationResourceManager.Instance["ErrorInvalidLink"],
                 "OK"
             );
             return;
         }
 
-        // Łączymy emoji z nazwą, jeśli podano
         string displayName = string.IsNullOrWhiteSpace(emoji) ? name : $"{emoji} {name}";
-
-        // 3. Tworzenie nowej stacji
         var newStation = new Station
         {
             Name = displayName,
@@ -384,14 +378,16 @@ public partial class MainPage : ContentPage
             IsFavorite = false,
         };
 
-        // 4. Dodanie stacji do listy obserwowalnej (pojawi się od razu w interfejsie)
         Stations.Add(newStation);
-
         _stationManager.SaveCustomStation(newStation);
 
-        DisplayAlert("Sukces", $"Stacja '{displayName}' została dodana!", "OK");
+        string successTitle = LocalizationResourceManager.Instance["DialogSuccessTitle"];
+        string successMsg = string.Format(
+            LocalizationResourceManager.Instance["MsgStationAdded"],
+            displayName
+        );
+        await DisplayAlert(successTitle, successMsg, "OK");
 
-        // Zamykamy overlay formularza
         AddCustomStationOverlay.IsOpen = false;
     }
 
@@ -408,36 +404,36 @@ public partial class MainPage : ContentPage
         string country = SearchStationFilterOverlay.SearchCountry;
         string tags = SearchStationFilterOverlay.SearchTags;
 
-        // Minimum jedno pole musi być uzupełnione
         if (
             string.IsNullOrWhiteSpace(name)
             && string.IsNullOrWhiteSpace(country)
             && string.IsNullOrWhiteSpace(tags)
         )
         {
-            await DisplayAlert("Błąd", "Wypełnij przynajmniej jedno pole wyszukiwania.", "OK");
+            await DisplayAlert(
+                LocalizationResourceManager.Instance["DialogErrorTitle"],
+                LocalizationResourceManager.Instance["ErrorFillOneField"],
+                "OK"
+            );
             return;
         }
 
         SearchStationFilterOverlay.IsOpen = false;
-        StatusLabel.Text = "Przeszukiwanie globalnej bazy...";
+        StatusLabel.Text = LocalizationResourceManager.Instance["StatusSearchingDb"];
         StatusLabel.TextColor = Colors.LightBlue;
 
-        // Pobieranie wyników z API
         var results = await _stationService.SearchRadioBrowserAsync(name, country, tags);
 
-        // FILTROWANIE: Usuwamy z wyników stacje, które już mamy na głównej liście (po URL)
         var filteredResults = results
             .Where(apiStation => !Stations.Any(myStation => myStation.Url == apiStation.Url))
             .ToList();
-
         StatusLabel.Text = LocalizationResourceManager.Instance["StatusReady"];
 
         if (filteredResults.Count == 0)
         {
             await DisplayAlert(
-                "Brak nowych stacji",
-                "Wszystkie znalezione stacje są już na Twojej liście.",
+                LocalizationResourceManager.Instance["TitleNoNewStations"],
+                LocalizationResourceManager.Instance["MsgAllStationsOnList"],
                 "OK"
             );
             return;
@@ -451,22 +447,18 @@ public partial class MainPage : ContentPage
     {
         if (selectedStation.IsPreviewing)
         {
-            // JEŚLI JUŻ GRA DEMO TEJ STACJI -> ZATRZYMUJEMY I WRACAMY DO POPRZEDNIEJ
             StopPreviewAndResumePrevious(selectedStation);
         }
         else
         {
-            // Zatrzymujemy inne demo, jeśli jakieś grało
             if (SearchStationResultsOverlay.CurrentStations != null)
             {
                 foreach (var s in SearchStationResultsOverlay.CurrentStations)
                     s.IsPreviewing = false;
             }
 
-            // Jeśli to pierwsze demo w tej sesji, zapamiętaj co grało normalnie
             if (_stationBeforePreview == null)
             {
-                // Szukamy aktualnie grającej stacji po nazwie z labela
                 _stationBeforePreview = Stations.FirstOrDefault(s =>
                     s.DisplayName == CurrentStationLabel.Text
                 );
@@ -475,7 +467,7 @@ public partial class MainPage : ContentPage
             selectedStation.IsPreviewing = true;
             _audioService.Play(selectedStation.Url, $"Demo: {selectedStation.DisplayName}");
 
-            StatusLabel.Text = "Tryb podglądu...";
+            StatusLabel.Text = LocalizationResourceManager.Instance["StatusPreviewMode"];
             StatusLabel.TextColor = Colors.Orange;
         }
     }
@@ -486,44 +478,44 @@ public partial class MainPage : ContentPage
 
         if (_stationBeforePreview != null)
         {
-            // Wznawiamy stację, która grała wcześniej
             PlayStation(_stationBeforePreview);
-            _stationBeforePreview = null; // Resetujemy pamięć
+            _stationBeforePreview = null;
         }
         else
         {
-            // Jeśli nic nie grało, po prostu zatrzymaj audio
             _audioService.Stop();
             StatusLabel.Text = LocalizationResourceManager.Instance["StatusReady"];
             StatusLabel.TextColor = Colors.Gray;
         }
     }
 
-    private void OnSearchResultAddClicked(object sender, Station station)
+    private async void OnSearchResultAddClicked(object sender, Station station)
     {
-        // Sprawdzamy czy stacja o takim samym linku już jest w naszych ulubionych/własnych
         if (Stations.Any(s => s.Url == station.Url))
         {
-            DisplayAlert("Info", "Ta stacja jest już na Twojej liście.", "OK");
+            await DisplayAlert(
+                LocalizationResourceManager.Instance["DialogInfoTitle"],
+                LocalizationResourceManager.Instance["MsgStationExists"],
+                "OK"
+            );
             return;
         }
 
-        // Dodanie stacji (używamy mechanizmu zapisu z poprzednich wiadomości)
         Stations.Add(station);
-        _stationManager.SaveCustomStation(station); // Zapis do JSON
+        _stationManager.SaveCustomStation(station);
 
-        DisplayAlert(
-            "Sukces",
-            $"Stacja '{station.DisplayName}' została dodana do Twojej listy!",
-            "OK"
+        string successTitle = LocalizationResourceManager.Instance["DialogSuccessTitle"];
+        string successMsg = string.Format(
+            LocalizationResourceManager.Instance["MsgStationAdded"],
+            station.DisplayName
         );
+        await DisplayAlert(successTitle, successMsg, "OK");
     }
 
     private void OnSearchResultsCloseClicked(object sender, EventArgs e)
     {
         SearchStationResultsOverlay.IsOpen = false;
 
-        // Resetujemy wszystkie stany previewing na liście
         var list = SearchStationResultsOverlay.CurrentStations;
         var previewingStation = list?.FirstOrDefault(s => s.IsPreviewing);
 

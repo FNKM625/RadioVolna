@@ -3,7 +3,7 @@
     [ContentProperty(nameof(Name))]
     public class TranslateExtension : IMarkupExtension<BindingBase>
     {
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
         public BindingBase ProvideValue(IServiceProvider serviceProvider)
         {
@@ -11,7 +11,7 @@
             {
                 Mode = BindingMode.OneWay,
                 Path = $"[{Name}]",
-                Source = LocalizationResourceManager.Instance
+                Source = LocalizationResourceManager.Instance,
             };
         }
 

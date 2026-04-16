@@ -2,6 +2,7 @@
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="RadioVolna.Views.AddStationMenuView"
+             xmlns:helpers="clr-namespace:RadioVolna.Resources"
              x:Name="this">
 
     <Grid IsVisible="{Binding IsOpen, Source={x:Reference this}}"
@@ -20,20 +21,15 @@
             </Border.StrokeShape>
 
             <VerticalStackLayout Spacing="14">
-                <Label Text="Dodaj stację"
+                <Label Text="{helpers:Translate TitleAddStation}"
                        FontSize="22"
                        FontAttributes="Bold"
                        HorizontalOptions="Center"
                        TextColor="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}" />
 
-                <Button Text="Dodaj własną"
-                        Clicked="OnAddCustomClicked" />
-
-                <Button Text="Wyszukaj"
-                        Clicked="OnSearchClicked" />
-
-                <Button Text="Anuluj"
-                        Clicked="OnCancelClicked" />
+                <Button Text="{helpers:Translate BtnAddCustom}" Clicked="OnAddCustomClicked" />
+                <Button Text="{helpers:Translate BtnSearch}" Clicked="OnSearchClicked" />
+                <Button Text="{helpers:Translate DialogCancel}" Clicked="OnCancelClicked" />
             </VerticalStackLayout>
         </Border>
     </Grid>
