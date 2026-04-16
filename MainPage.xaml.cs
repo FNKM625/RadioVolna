@@ -21,7 +21,7 @@ public partial class MainPage : ContentPage
         InitializeComponent();
 
         _audioService = audioService;
-        StationsList.ItemsSource = Stations;
+        StationSelectionOverlay.ItemsSource = Stations;
         _audioService.StatusChanged += OnStatusChanged;
         LocalizationResourceManager.Instance.PropertyChanged += OnLanguageChanged;
 
@@ -30,6 +30,7 @@ public partial class MainPage : ContentPage
 
     private async void LoadStations()
     {
+        // 1. Ładowanie domyślnych stacji (np. z API lub pliku bazy)
         var loadedStations = await _stationService.GetStationsAsync();
 
         if (loadedStations.Count == 0)
@@ -41,7 +42,20 @@ public partial class MainPage : ContentPage
             return;
         }
 
+        // 2. Scalanie domyślnych stacji z ulubionymi
         _stationManager.MergeWithFavorites(loadedStations, Stations);
+
+        // NOWE: 3. Ładowanie własnych stacji użytkownika
+        var customStations = _stationManager.LoadCustomStations();
+        foreach (var customStation in customStations)
+        {
+            // Upewniamy się, że nie dodajemy duplikatów, jeśli URL już jest na liście
+            if (!Stations.Any(s => s.Url == customStation.Url))
+            {
+                Stations.Add(customStation);
+            }
+        }
+
 #if ANDROID
         if (_audioService is AudioService androidAudioService)
         {
@@ -49,14 +63,6 @@ public partial class MainPage : ContentPage
         }
 #endif
         CheckAndRunAutoStart();
-    }
-
-    private void OnFavoriteClicked(object sender, EventArgs e)
-    {
-        if (sender is Button btn && btn.CommandParameter is Station station)
-        {
-            _stationManager.ToggleFavorite(station, Stations);
-        }
     }
 
     // --- PONIŻEJ TYLKO OBSŁUGA UI I ODTWARZANIA ---
@@ -185,24 +191,11 @@ public partial class MainPage : ContentPage
         }
     }
 
-    private void OnStationSelected(object sender, SelectionChangedEventArgs e)
-    {
-        if (e.CurrentSelection.FirstOrDefault() is Station selectedStation)
-        {
-            PlayStation(selectedStation);
-            StationSelectionOverlay.IsVisible = false;
-            StationsList.SelectedItem = null;
-        }
-    }
-
     private void OnCloseAutoStartClicked(object sender, EventArgs e) =>
         AutoStartOverlay.IsVisible = false;
 
     private void OnOpenListClicked(object sender, EventArgs e) =>
         StationSelectionOverlay.IsVisible = true;
-
-    private void OnCloseListClicked(object sender, EventArgs e) =>
-        StationSelectionOverlay.IsVisible = false;
 
     private void OnSettingsClicked(object sender, EventArgs e)
     {
@@ -257,5 +250,150 @@ public partial class MainPage : ContentPage
     {
         string key = _isPlaying ? "BtnPause" : "BtnResume";
         PlayPauseBtn.Text = LocalizationResourceManager.Instance[key];
+    }
+
+    // --- OBSŁUGA STATION SELECTION VIEW ---
+
+    private void OnStationSelectionView_StationSelected(object sender, Station selectedStation)
+    {
+        PlayStation(selectedStation);
+        StationSelectionOverlay.IsVisible = false;
+        StationSelectionOverlay.ClearSelection();
+    }
+
+    private void OnStationSelectionView_FavoriteClicked(object sender, Station station)
+    {
+        _stationManager.ToggleFavorite(station, Stations);
+    }
+
+    private void OnStationSelectionView_CloseRequested(object sender, EventArgs e)
+    {
+        StationSelectionOverlay.IsVisible = false;
+    }
+
+    private async void OnStationSelectionView_DeleteClicked(object sender, Station station)
+    {
+        // Wyświetlenie okna z pytaniem o potwierdzenie
+        bool answer = await DisplayAlert(
+            "Usuwanie stacji",
+            $"Czy na pewno chcesz usunąć stację '{station.DisplayName}'?",
+            "Tak",
+            "Nie"
+        );
+
+        if (answer)
+        {
+            // 1. Usuwamy z pliku JSON (jeśli to stacja własna)
+            _stationManager.DeleteCustomStation(station);
+
+            // 2. Usuwamy z aktualnie wyświetlanej listy w aplikacji
+            Stations.Remove(station);
+
+            // Opcjonalnie: jeśli usunięta stacja była aktualnie odtwarzana, możemy zatrzymać radio
+            if (CurrentStationLabel.Text == station.DisplayName)
+            {
+                _audioService.Stop();
+                CurrentStationLabel.Text = LocalizationResourceManager.Instance["MsgSelectStation"];
+                StatusLabel.Text = LocalizationResourceManager.Instance["StatusReady"];
+            }
+        }
+    }
+
+    // --- OBSŁUGA DODAWANIA STACJI ---
+
+    private void OnOpenAddStationMenuClicked(object sender, EventArgs e)
+    {
+        // Otwiera menu (zmienia właściwość IsOpen, co wyświetla Grid w Twoim XAML)
+        AddStationMenuOverlay.IsOpen = true;
+    }
+
+    private void OnAddCustomStationClicked(object sender, EventArgs e)
+    {
+        // Czyścimy formularz przed wyświetleniem i otwieramy overlay
+        AddCustomStationOverlay.ClearForm();
+        AddCustomStationOverlay.IsOpen = true;
+    }
+
+    private void OnSearchStationClicked(object sender, EventArgs e)
+    {
+        // Tutaj w przyszłości otworzysz wyszukiwarkę stacji (np. z Radio Browser API)
+        DisplayAlert("Info", "Otwieram okno wyszukiwania...", "OK");
+    }
+
+    // --- OBSŁUGA DODAWANIA WŁASNEJ STACJI ---
+    private void OnCustomStationCancelClicked(object sender, EventArgs e)
+    {
+        // Po prostu zamykamy okienko
+        AddCustomStationOverlay.IsOpen = false;
+    }
+
+    private void OnCustomStationPreviewClicked(object sender, EventArgs e)
+    {
+        string url = AddCustomStationOverlay.StationUrl;
+        string name = AddCustomStationOverlay.StationName;
+
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            DisplayAlert("Błąd", "Podaj link do streamu, aby go przetestować.", "OK");
+            return;
+        }
+
+        // Odtwarzanie próbne - używamy nazwy, a jeśli jej nie ma, wpisujemy domyślną
+        _audioService.Play(url, string.IsNullOrWhiteSpace(name) ? "Test streamu..." : name);
+
+        // Ręcznie symulujemy stan na interfejsie
+        StatusLabel.Text = "Testowanie własnego linku...";
+        StatusLabel.TextColor = Colors.LightBlue;
+    }
+
+    private void OnCustomStationSaveClicked(object sender, EventArgs e)
+    {
+        string name = AddCustomStationOverlay.StationName;
+        string url = AddCustomStationOverlay.StationUrl;
+        string emoji = AddCustomStationOverlay.StationEmoji;
+
+        // 1. Walidacja nazwy (nie może być pusta)
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            DisplayAlert("Błąd", "Nazwa stacji jest wymagana.", "OK");
+            return;
+        }
+
+        // 2. Walidacja URL
+        bool isValidUrl =
+            Uri.TryCreate(url, UriKind.Absolute, out Uri? uriResult)
+            && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
+
+        if (!isValidUrl)
+        {
+            DisplayAlert(
+                "Błąd",
+                "Podany link jest niepoprawny. Upewnij się, że zawiera przedrostek http:// lub https:// i nie ma w nim spacji.",
+                "OK"
+            );
+            return;
+        }
+
+        // Łączymy emoji z nazwą, jeśli podano
+        string displayName = string.IsNullOrWhiteSpace(emoji) ? name : $"{emoji} {name}";
+
+        // 3. Tworzenie nowej stacji
+        var newStation = new Station
+        {
+            Name = displayName,
+            DisplayName = displayName,
+            Url = url,
+            IsFavorite = false,
+        };
+
+        // 4. Dodanie stacji do listy obserwowalnej (pojawi się od razu w interfejsie)
+        Stations.Add(newStation);
+
+        _stationManager.SaveCustomStation(newStation);
+
+        DisplayAlert("Sukces", $"Stacja '{displayName}' została dodana!", "OK");
+
+        // Zamykamy overlay formularza
+        AddCustomStationOverlay.IsOpen = false;
     }
 }
