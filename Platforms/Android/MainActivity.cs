@@ -15,6 +15,7 @@ namespace RadioVolna
         Theme = "@style/Maui.SplashTheme",
         MainLauncher = true,
         LaunchMode = LaunchMode.SingleTop,
+        ScreenOrientation = Android.Content.PM.ScreenOrientation.Portrait,
         ConfigurationChanges = ConfigChanges.ScreenSize
             | ConfigChanges.Orientation
             | ConfigChanges.UiMode

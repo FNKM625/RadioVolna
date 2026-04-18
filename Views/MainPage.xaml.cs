@@ -96,11 +96,17 @@ public partial class MainPage : ContentPage
             var station = Stations.FirstOrDefault(s => s.DisplayName == autoStartName);
             if (station != null)
             {
-                await Task.Delay(500);
-                PlayStation(station);
+                _isPlaying = true;
+                UpdatePlayPauseText();
 
-                string prefix = LocalizationResourceManager.Instance["MsgAutoStartPrefix"];
-                StatusLabel.Text = $"{prefix} {station.DisplayName}";
+                await Task.Delay(500);
+
+                if (_isPlaying)
+                {
+                    PlayStation(station);
+                    string prefix = LocalizationResourceManager.Instance["MsgAutoStartPrefix"];
+                    StatusLabel.Text = $"{prefix} {station.DisplayName}";
+                }
             }
         }
     }
@@ -123,7 +129,7 @@ public partial class MainPage : ContentPage
     {
         if (_isPlaying)
         {
-            _audioService.Pause();
+            _audioService.Stop();
             _isPlaying = false;
 
             StatusLabel.Text = LocalizationResourceManager.Instance["NotifPaused"];
@@ -131,8 +137,19 @@ public partial class MainPage : ContentPage
         }
         else
         {
-            _audioService.Resume();
             _isPlaying = true;
+
+            var currentStationName = CurrentStationLabel.Text;
+            var stationToPlay = Stations.FirstOrDefault(s => s.DisplayName == currentStationName);
+
+            if (stationToPlay != null)
+            {
+                _audioService.Play(stationToPlay.Url, stationToPlay.DisplayName);
+            }
+            else
+            {
+                _audioService.Resume();
+            }
 
             StatusLabel.Text = LocalizationResourceManager.Instance["StatusPlayingGeneric"];
             StatusLabel.TextColor = Colors.LightGreen;
