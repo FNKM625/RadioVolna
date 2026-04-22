@@ -6,7 +6,8 @@ namespace RadioVolna.Resources
 {
     public class LocalizationResourceManager : INotifyPropertyChanged
     {
-        public static LocalizationResourceManager Instance { get; } = new LocalizationResourceManager();
+        public static LocalizationResourceManager Instance { get; } =
+            new LocalizationResourceManager();
 
         private LocalizationResourceManager()
         {

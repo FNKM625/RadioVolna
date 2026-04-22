@@ -90,10 +90,18 @@ public partial class MainPage : ContentPage
 
     private async void CheckAndRunAutoStart()
     {
-        string? autoStartName = Preferences.Get("AutoStartStationName", (string?)null);
-        if (!string.IsNullOrEmpty(autoStartName))
+        string? targetStationName = Preferences.Get("AutoStartStationName", (string?)null);
+        bool isStrictAutoStart = true;
+
+        if (string.IsNullOrEmpty(targetStationName))
         {
-            var station = Stations.FirstOrDefault(s => s.DisplayName == autoStartName);
+            targetStationName = Preferences.Get("LastPlayedStation", (string?)null);
+            isStrictAutoStart = false;
+        }
+
+        if (!string.IsNullOrEmpty(targetStationName))
+        {
+            var station = Stations.FirstOrDefault(s => s.DisplayName == targetStationName);
             if (station != null)
             {
                 _isPlaying = true;
@@ -104,8 +112,12 @@ public partial class MainPage : ContentPage
                 if (_isPlaying)
                 {
                     PlayStation(station);
-                    string prefix = LocalizationResourceManager.Instance["MsgAutoStartPrefix"];
-                    StatusLabel.Text = $"{prefix} {station.DisplayName}";
+
+                    if (isStrictAutoStart)
+                    {
+                        string prefix = LocalizationResourceManager.Instance["MsgAutoStartPrefix"];
+                        StatusLabel.Text = $"{prefix} {station.DisplayName}";
+                    }
                 }
             }
         }
@@ -115,6 +127,7 @@ public partial class MainPage : ContentPage
     {
         _audioService.Play(station.Url, station.DisplayName);
         CurrentStationLabel.Text = station.DisplayName;
+        Preferences.Set("LastPlayedStation", station.DisplayName);
 
         StatusLabel.Text = LocalizationResourceManager.Instance["StatusPlayingGeneric"];
         StatusLabel.TextColor = Colors.LightGreen;
@@ -225,7 +238,7 @@ public partial class MainPage : ContentPage
     {
         string displayVersion = AppInfo.Current.VersionString;
         string buildNumber = AppInfo.Current.BuildString;
-        string fullVersion = $"{displayVersion} Build({buildNumber})";
+        string fullVersion = $"{displayVersion}";
 
         string title = LocalizationResourceManager.Instance["BtnAbout"].Replace("ℹ️ ", "");
         string bodyFormat = LocalizationResourceManager.Instance["MsgAboutBody"];

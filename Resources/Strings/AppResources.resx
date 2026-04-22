@@ -307,6 +307,6 @@
     <value>Country, language or code</value>
   </data>
   <data name="PlaceholderTags" xml:space="preserve">
-    <value>Tags, e.g. rock, news</value>
+    <value>Tags: rock, news</value>
   </data>
 </root>

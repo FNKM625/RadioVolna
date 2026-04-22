@@ -71,14 +71,12 @@ public class StationManager
     public List<Station> LoadCustomStations()
     {
         if (!File.Exists(_customStationsFilePath))
-            return new List<Station>(); // Jeśli plik nie istnieje, zwracamy pustą listę
-
+            return new List<Station>();
         try
         {
             string json = File.ReadAllText(_customStationsFilePath);
             var stations = JsonSerializer.Deserialize<List<Station>>(json) ?? new List<Station>();
 
-            // NOWE: Kopiujemy wczytane 'Name' do 'DisplayName', by UI to widziało
             foreach (var station in stations)
             {
                 station.DisplayName = station.Name;
@@ -93,19 +91,14 @@ public class StationManager
         }
     }
 
-    // Metoda do zapisywania nowej własnej stacji
     public void SaveCustomStation(Station newStation)
     {
-        // 1. Pobieramy dotychczas zapisane stacje
         var customStations = LoadCustomStations();
 
-        // 2. Sprawdzamy, czy stacja o takim samym URL już nie istnieje (żeby uniknąć duplikatów)
         if (!customStations.Any(s => s.Url == newStation.Url))
         {
-            // 3. Dodajemy nową stację do listy
             customStations.Add(newStation);
 
-            // 4. Zapisujemy zaktualizowaną listę do pliku
             string json = JsonSerializer.Serialize(customStations);
             File.WriteAllText(_customStationsFilePath, json);
         }
@@ -115,14 +108,12 @@ public class StationManager
     {
         var customStations = LoadCustomStations();
 
-        // Szukamy stacji po URL (unikalny identyfikator)
         var stationToRemove = customStations.FirstOrDefault(s => s.Url == stationToDelete.Url);
 
         if (stationToRemove != null)
         {
             customStations.Remove(stationToRemove);
 
-            // Zapisujemy zaktualizowaną listę bez usuniętej stacji
             string json = JsonSerializer.Serialize(customStations);
             File.WriteAllText(_customStationsFilePath, json);
         }

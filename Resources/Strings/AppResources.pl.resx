@@ -267,44 +267,81 @@
   <data name="BatteryStatusBad" xml:space="preserve">
     <value>⚠️ Bateria: Ograniczona (Napraw)</value>
   </data>
-  <data name="TitleAddStation" xml:space="preserve"><value>Dodaj stację</value></data>
-  <data name="TitleAddCustomStation" xml:space="preserve"><value>Dodaj własną stację</value></data>
-  <data name="TitleSearchStations" xml:space="preserve"><value>Wyszukaj stacje</value></data>
-  <data name="TitleSearchResults" xml:space="preserve"><value>Wyniki wyszukiwania</value></data>
-  <data name="BtnAddCustom" xml:space="preserve"><value>Dodaj własną</value></data>
-  <data name="BtnSearch" xml:space="preserve"><value>Szukaj</value></data>
-  <data name="BtnAdd" xml:space="preserve"><value>Dodaj</value></data>
-  <data name="PlaceholderStationName" xml:space="preserve"><value>Nazwa stacji</value></data>
-  <data name="PlaceholderStreamUrl" xml:space="preserve"><value>Link do streamu</value></data>
-  <data name="PlaceholderEmoji" xml:space="preserve"><value>Emoji (opcjonalnie)</value></data>
-  <data name="PlaceholderSearchName" xml:space="preserve"><value>Nazwa / słowo kluczowe</value></data>
-  <data name="PlaceholderSearchCountry" xml:space="preserve"><value>Państwo, język lub kod kraju</value></data>
-  <data name="PlaceholderSearchTags" xml:space="preserve"><value>Tagi, np. rock, news</value></data>
-  <data name="LabelDeleteMode" xml:space="preserve"><value>Tryb usuwania</value></data>
-  <data name="DialogDeleteTitle" xml:space="preserve"><value>Usuwanie stacji</value></data>
-  <data name="DialogDeleteMsg" xml:space="preserve"><value>Czy na pewno chcesz usunąć stację '{0}'?</value></data>
-  <data name="DialogYes" xml:space="preserve"><value>Tak</value></data>
-  <data name="DialogNo" xml:space="preserve"><value>Nie</value></data>
-  <data name="DialogErrorTitle" xml:space="preserve"><value>Błąd</value></data>
-  <data name="DialogSuccessTitle" xml:space="preserve"><value>Sukces</value></data>
-  <data name="DialogInfoTitle" xml:space="preserve"><value>Info</value></data>
-  <data name="ErrorProvideLink" xml:space="preserve"><value>Podaj link do streamu, aby go przetestować.</value></data>
-  <data name="ErrorStationNameReq" xml:space="preserve"><value>Nazwa stacji jest wymagana.</value></data>
-  <data name="ErrorInvalidLink" xml:space="preserve"><value>Podany link jest niepoprawny. Upewnij się, że zaczyna się od http:// lub https://.</value></data>
-  <data name="ErrorFillOneField" xml:space="preserve"><value>Wypełnij przynajmniej jedno pole wyszukiwania.</value></data>
-  <data name="MsgStationAdded" xml:space="preserve"><value>Stacja '{0}' została dodana!</value></data>
-  <data name="MsgStationExists" xml:space="preserve"><value>Ta stacja jest już na Twojej liście.</value></data>
-  <data name="TitleNoResults" xml:space="preserve"><value>Brak wyników</value></data>
-  <data name="MsgNoStationsFound" xml:space="preserve"><value>Nie znaleziono stacji spełniających te kryteria.</value></data>
-  <data name="TitleNoNewStations" xml:space="preserve"><value>Brak nowych stacji</value></data>
-  <data name="MsgAllStationsOnList" xml:space="preserve"><value>Wszystkie znalezione stacje są już na Twojej liście.</value></data>
-  <data name="StatusTestingLink" xml:space="preserve"><value>Testowanie własnego linku...</value></data>
-  <data name="StatusSearchingDb" xml:space="preserve"><value>Przeszukiwanie bazy...</value></data>
-  <data name="StatusPreviewMode" xml:space="preserve"><value>Tryb podglądu...</value></data>
+  <data name="TitleAddStation" xml:space="preserve">
+    <value>Dodaj stację</value>
+  </data>
+  <data name="TitleAddCustomStation" xml:space="preserve">
+   <value>Dodaj własną stację</value>
+  </data>
+  <data name="TitleSearchStations" xml:space="preserve">
+   <value>Wyszukaj stacje</value></data>
+  <data name="TitleSearchResults" xml:space="preserve">
+   <value>Wyniki wyszukiwania</value></data>
+  <data name="BtnAddCustom" xml:space="preserve">
+   <value>Dodaj własną</value></data>
+  <data name="BtnSearch" xml:space="preserve">
+   <value>Szukaj</value></data>
+  <data name="BtnAdd" xml:space="preserve">
+   <value>Dodaj</value></data>
+  <data name="PlaceholderStationName" xml:space="preserve">
+   <value>Nazwa stacji</value></data>
+  <data name="PlaceholderStreamUrl" xml:space="preserve">
+   <value>Link do streamu</value></data>
+  <data name="PlaceholderEmoji" xml:space="preserve">
+   <value>Emoji (opcjonalnie)</value></data>
+  <data name="PlaceholderSearchName" xml:space="preserve">
+   <value>Nazwa / słowo kluczowe</value></data>
+  <data name="PlaceholderSearchCountry" xml:space="preserve">
+   <value>Państwo, język lub kod kraju</value></data>
+  <data name="PlaceholderSearchTags" xml:space="preserve">
+   <value>Tagi, np. rock, news</value></data>
+  <data name="LabelDeleteMode" xml:space="preserve">
+   <value>Tryb usuwania</value></data>
+  <data name="DialogDeleteTitle" xml:space="preserve">
+   <value>Usuwanie stacji</value></data>
+  <data name="DialogDeleteMsg" xml:space="preserve">
+   <value>Czy na pewno chcesz usunąć stację '{0}'?</value></data>
+  <data name="DialogYes" xml:space="preserve">
+   <value>Tak</value></data>
+  <data name="DialogNo" xml:space="preserve">
+   <value>Nie</value></data>
+  <data name="DialogErrorTitle" xml:space="preserve">
+   <value>Błąd</value></data>
+  <data name="DialogSuccessTitle" xml:space="preserve">
+   <value>Sukces</value></data>
+  <data name="DialogInfoTitle" xml:space="preserve">
+   <value>Info</value></data>
+  <data name="ErrorProvideLink" xml:space="preserve">
+   <value>Podaj link do streamu, aby go przetestować.</value></data>
+  <data name="ErrorStationNameReq" xml:space="preserve">
+   <value>Nazwa stacji jest wymagana.</value></data>
+  <data name="ErrorInvalidLink" xml:space="preserve">
+   <value>Podany link jest niepoprawny. Upewnij się, że zaczyna się od http:// lub https://.</value></data>
+  <data name="ErrorFillOneField" xml:space="preserve">
+   <value>Wypełnij przynajmniej jedno pole wyszukiwania.</value></data>
+  <data name="MsgStationAdded" xml:space="preserve">
+   <value>Stacja '{0}' została dodana!</value></data>
+  <data name="MsgStationExists" xml:space="preserve">F
+   <value>Ta stacja jest już na Twojej liście.</value></data>
+  <data name="TitleNoResults" xml:space="preserve">
+   <value>Brak wyników</value></data>
+  <data name="MsgNoStationsFound" xml:space="preserve">
+   <value>Nie znaleziono stacji spełniających te kryteria.</value></data>
+  <data name="TitleNoNewStations" xml:space="preserve">
+   <value>Brak nowych stacji</value></data>
+  <data name="MsgAllStationsOnList" xml:space="preserve">
+   <value>Wszystkie znalezione stacje są już na Twojej liście.</value></data>
+  <data name="StatusTestingLink" xml:space="preserve">
+  <value>Testowanie własnego linku...</value></data>
+  <data name="StatusSearchingDb" xml:space="preserve">
+  <value>Przeszukiwanie bazy...</value></data>
+  <data name="StatusPreviewMode" xml:space="preserve">
+   <value>Tryb podglądu...</value>
+   </data>
   <data name="PlaceholderCountry" xml:space="preserve">
     <value>Państwo, język lub kod kraju</value>
   </data>
   <data name="PlaceholderTags" xml:space="preserve">
-    <value>Tagi, np. rock, news</value>
+    <value>Tagi: rock, wiadomości</value>
   </data>
 </root>

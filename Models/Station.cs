@@ -25,7 +25,6 @@ public class Station : INotifyPropertyChanged
             {
                 _faviconUrl = value;
                 OnPropertyChanged();
-                // Informujemy widok, że zmieniły się ostateczne dane do wyświetlenia
                 OnPropertyChanged(nameof(DisplayFavicon));
                 OnPropertyChanged(nameof(DisplayEmoji));
             }
@@ -47,7 +46,6 @@ public class Station : INotifyPropertyChanged
     {
         get
         {
-            // 1. Jeśli mamy link do obrazka, ukrywamy tekst (zwracamy pusty string)
             if (!string.IsNullOrWhiteSpace(FaviconUrl))
                 return "";
 

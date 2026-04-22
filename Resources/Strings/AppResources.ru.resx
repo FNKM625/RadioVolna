@@ -305,6 +305,6 @@
     <value>Страна, язык или код</value>
   </data>
   <data name="PlaceholderTags" xml:space="preserve">
-    <value>Теги, напр. rock, news</value>
+    <value>Теги: рок, новости</value>
   </data>
 </root>

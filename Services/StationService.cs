@@ -31,7 +31,6 @@ public class StationService
     {
         try
         {
-            // Tworzymy zapytanie - szukamy tylko działających stacji (hidebroken=true) z limitem 30
             var queryParams = new List<string> { "hidebroken=true", "limit=30" };
 
             if (!string.IsNullOrWhiteSpace(name))
@@ -41,7 +40,6 @@ public class StationService
             if (!string.IsNullOrWhiteSpace(tags))
                 queryParams.Add($"tag={Uri.EscapeDataString(tags)}");
 
-            // d1.api.radio-browser.info to główny serwer obsługujący zapytania
             string url =
                 $"https://de1.api.radio-browser.info/json/stations/search?{string.Join("&", queryParams)}";
 
@@ -58,7 +56,6 @@ public class StationService
                         element.GetProperty("name").GetString()?.Trim() ?? "Nieznana stacja";
                     var streamUrl = element.GetProperty("url_resolved").GetString() ?? string.Empty;
 
-                    // NOWE: Pobieranie linku do ikony i kodu państwa
                     var favicon = element.GetProperty("favicon").GetString() ?? string.Empty;
                     var countryCode =
                         element.GetProperty("countrycode").GetString() ?? string.Empty;
@@ -71,8 +68,8 @@ public class StationService
                                 Name = stationName,
                                 DisplayName = stationName,
                                 Url = streamUrl,
-                                FaviconUrl = favicon, // Zapisujemy link do logo
-                                CountryEmoji = GetFlagEmoji(countryCode), // Generujemy flagę
+                                FaviconUrl = favicon,
+                                CountryEmoji = GetFlagEmoji(countryCode),
                                 IsFavorite = false,
                             }
                         );
@@ -90,9 +87,8 @@ public class StationService
 
     private string GetFlagEmoji(string countryCode)
     {
-        // Jeśli brak kodu kraju lub jest za krótki, zwracamy domyślne emoji "muzyka" lub "radio"
         if (string.IsNullOrWhiteSpace(countryCode) || countryCode.Length != 2)
-            return "🎵"; // To będzie Twój "ostateczny" fallback
+            return "🎵";
 
         try
         {
@@ -107,7 +103,7 @@ public class StationService
         }
         catch
         {
-            return "📻"; // Fallback w razie jakiegokolwiek błędu konwersji
+            return "📻";
         }
     }
 }
