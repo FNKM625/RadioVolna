@@ -6,6 +6,9 @@
 
     <Grid BackgroundColor="#CC000000"
           Padding="20">
+        <Grid.GestureRecognizers>
+            <TapGestureRecognizer Tapped="OnCloseListClicked"/>
+        </Grid.GestureRecognizers>
         <Border BackgroundColor="{AppThemeBinding Light={StaticResource TextDark}, Dark={StaticResource CardDark}}"
                 StrokeThickness="0"
                 VerticalOptions="Center"
@@ -13,6 +16,9 @@
             <Border.StrokeShape>
                 <RoundRectangle CornerRadius="20"/>
             </Border.StrokeShape>
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnWindowContentTapped"/>
+            </Border.GestureRecognizers>
 
             <Grid RowDefinitions="Auto, Auto, *, Auto"
                   Padding="20">

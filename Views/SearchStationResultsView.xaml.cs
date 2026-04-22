@@ -47,4 +47,6 @@ public partial class SearchStationResultsView : ContentView
 
     private void OnCloseClicked(object sender, EventArgs e) =>
         CloseClicked?.Invoke(this, EventArgs.Empty);
+
+    private void OnWindowContentTapped(object sender, EventArgs e) { }
 }

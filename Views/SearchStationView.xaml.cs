@@ -37,6 +37,31 @@ public partial class SearchStationView : ContentView
     private void OnSearchClicked(object sender, EventArgs e) =>
         SearchClicked?.Invoke(this, EventArgs.Empty);
 
-    private void OnCancelClicked(object sender, EventArgs e) =>
+    private void OnCancelClicked(object sender, EventArgs e)
+    {
+        OnWindowContentTapped(this, EventArgs.Empty);
         CancelClicked?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void OnWindowContentTapped(object sender, EventArgs e)
+    {
+        NameEntry?.Unfocus();
+        CountryEntry?.Unfocus();
+        TagsEntry?.Unfocus();
+        if (NameEntry != null)
+        {
+            NameEntry.IsEnabled = false;
+            NameEntry.IsEnabled = true;
+        }
+        if (CountryEntry != null)
+        {
+            CountryEntry.IsEnabled = false;
+            CountryEntry.IsEnabled = true;
+        }
+        if (TagsEntry != null)
+        {
+            TagsEntry.IsEnabled = false;
+            TagsEntry.IsEnabled = true;
+        }
+    }
 }

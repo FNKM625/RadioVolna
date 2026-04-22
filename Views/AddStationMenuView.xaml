@@ -8,6 +8,9 @@
     <Grid IsVisible="{Binding IsOpen, Source={x:Reference this}}"
           BackgroundColor="#CC000000"
           Padding="20">
+        <Grid.GestureRecognizers>
+            <TapGestureRecognizer Tapped="OnCancelClicked"/>
+        </Grid.GestureRecognizers>
 
         <Border BackgroundColor="{AppThemeBinding Light={StaticResource CardLight}, Dark={StaticResource CardDark}}"
                 StrokeThickness="0"
@@ -20,16 +23,23 @@
                 <RoundRectangle CornerRadius="20"/>
             </Border.StrokeShape>
 
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnWindowContentTapped"/>
+            </Border.GestureRecognizers>
+
             <VerticalStackLayout Spacing="14">
                 <Label Text="{helpers:Translate TitleAddStation}"
                        FontSize="22"
                        FontAttributes="Bold"
                        HorizontalOptions="Center"
-                       TextColor="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}" />
+                       TextColor="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}"/>
 
-                <Button Text="{helpers:Translate BtnAddCustom}" Clicked="OnAddCustomClicked" />
-                <Button Text="{helpers:Translate BtnSearch}" Clicked="OnSearchClicked" />
-                <Button Text="{helpers:Translate DialogCancel}" Clicked="OnCancelClicked" />
+                <Button Text="{helpers:Translate BtnAddCustom}"
+                        Clicked="OnAddCustomClicked"/>
+                <Button Text="{helpers:Translate BtnSearch}"
+                        Clicked="OnSearchClicked"/>
+                <Button Text="{helpers:Translate DialogCancel}"
+                        Clicked="OnCancelClicked"/>
             </VerticalStackLayout>
         </Border>
     </Grid>

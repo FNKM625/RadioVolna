@@ -1,5 +1,5 @@
 using System.Collections;
-using RadioVolna; // Aby mieć dostęp do modelu Station
+using RadioVolna;
 
 namespace RadioVolna.Views;
 
@@ -59,4 +59,6 @@ public partial class StationSelectionView : ContentView
             DeleteClicked?.Invoke(this, station);
         }
     }
+
+    private void OnWindowContentTapped(object sender, EventArgs e) { }
 }

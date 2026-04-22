@@ -8,7 +8,9 @@
     <Grid IsVisible="{Binding IsOpen, Source={x:Reference this}}"
           BackgroundColor="#CC000000"
           Padding="20">
-
+        <Grid.GestureRecognizers>
+            <TapGestureRecognizer Tapped="OnCancelClicked"/>
+        </Grid.GestureRecognizers>
         <Border BackgroundColor="{AppThemeBinding Light={StaticResource CardLight}, Dark={StaticResource CardDark}}"
                 StrokeThickness="0"
                 VerticalOptions="Center"
@@ -19,6 +21,9 @@
             <Border.StrokeShape>
                 <RoundRectangle CornerRadius="20"/>
             </Border.StrokeShape>
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnWindowContentTapped"/>
+            </Border.GestureRecognizers>
 
             <VerticalStackLayout Spacing="14">
 

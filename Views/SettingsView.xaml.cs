@@ -161,4 +161,6 @@ public partial class SettingsView : ContentView
         if (Application.Current?.MainPage != null)
             await Application.Current.MainPage.DisplayAlert(title, msg, "OK");
     }
+
+    private void OnWindowContentTapped(object sender, EventArgs e) { }
 }

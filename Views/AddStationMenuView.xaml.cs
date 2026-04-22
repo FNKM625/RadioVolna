@@ -43,4 +43,6 @@ public partial class AddStationMenuView : ContentView
     {
         IsOpen = false; // Po prostu zamknij menu
     }
+
+    private void OnWindowContentTapped(object sender, EventArgs e) { }
 }
