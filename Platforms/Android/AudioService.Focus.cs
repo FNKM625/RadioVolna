@@ -8,6 +8,8 @@ namespace RadioVolna;
 
 public partial class AudioService
 {
+    private bool _wasPlayingBeforeFocusLoss = false;
+
     // --- AUDIO FOCUS ---
     [SupportedOSPlatformGuard("android26.0")]
     private bool RequestAudioFocus()
@@ -89,18 +91,27 @@ public partial class AudioService
                     Resume();
                     _resumeOnFocusGain = false;
                 }
-                if (_player != null)
+                if (_isUsingExoPlayer && _exoPlayer != null)
+                    _exoPlayer.Volume = 1.0f;
+                else if (!_isUsingExoPlayer && _player != null)
                     _player.SetVolume(1.0f, 1.0f);
                 break;
+
             case AudioFocus.Loss:
+                _resumeOnFocusGain = false;
                 Stop();
                 break;
+
             case AudioFocus.LossTransient:
+                _resumeOnFocusGain = _shouldBePlaying;
+
                 Pause();
-                _resumeOnFocusGain = true;
                 break;
+
             case AudioFocus.LossTransientCanDuck:
-                if (_player != null)
+                if (_isUsingExoPlayer && _exoPlayer != null)
+                    _exoPlayer.Volume = 0.1f;
+                else if (!_isUsingExoPlayer && _player != null)
                     _player.SetVolume(0.1f, 0.1f);
                 break;
         }
@@ -110,26 +121,48 @@ public partial class AudioService
 
     private void RegisterNoisyReceiver()
     {
-        if (!_isNoisyReceiverRegistered)
-        {
+        if (_isNoisyReceiverRegistered)
+            return;
+
+        if (_noisyReceiver == null)
             _noisyReceiver = new NoisyAudioReceiver(this);
-            var filter = new IntentFilter(AudioManager.ActionAudioBecomingNoisy);
-            _context.RegisterReceiver(_noisyReceiver, filter);
-            _isNoisyReceiverRegistered = true;
+
+        var filter = new IntentFilter(AudioManager.ActionAudioBecomingNoisy);
+
+        // Rozwiązanie problemów z wersji Androida (fix dla image_a1abdf.png)
+        if (Build.VERSION.SdkInt >= BuildVersionCodes.Tiramisu) // Android 13+
+        {
+            _context.RegisterReceiver(_noisyReceiver, filter, ReceiverFlags.NotExported);
         }
+        else if (Build.VERSION.SdkInt >= BuildVersionCodes.O) // Android 8+
+        {
+            _context.RegisterReceiver(_noisyReceiver, filter, (ReceiverFlags)0);
+        }
+        else
+        {
+            _context.RegisterReceiver(_noisyReceiver, filter);
+        }
+
+        _isNoisyReceiverRegistered = true;
+        Log("NoisyReceiver zarejestrowany - Bluetooth jest pod nadzorem.");
     }
 
     private void UnregisterNoisyReceiver()
     {
-        if (_isNoisyReceiverRegistered && _noisyReceiver != null)
+        if (!_isNoisyReceiverRegistered || _noisyReceiver == null)
+            return;
+
+        try
         {
-            try
-            {
-                _context.UnregisterReceiver(_noisyReceiver);
-            }
-            catch { }
+            _context.UnregisterReceiver(_noisyReceiver);
+        }
+        catch (Exception ex)
+        {
+            Log($"Błąd podczas wyrejestrowania NoisyReceiver: {ex.Message}");
+        }
+        finally
+        {
             _isNoisyReceiverRegistered = false;
-            _noisyReceiver = null;
         }
     }
 
