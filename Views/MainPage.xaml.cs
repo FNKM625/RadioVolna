@@ -604,9 +604,10 @@ public partial class MainPage : ContentPage
 
                         string action = await DisplayActionSheet(
                             $"{title}\n{message}",
-                            btnNo,
+                            null,
                             null,
                             btnYes,
+                            btnNo,
                             btnSkip
                         );
 
