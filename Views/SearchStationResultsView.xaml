@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="RadioVolna.Views.SearchStationResultsView"
+             xmlns:helpers="clr-namespace:RadioVolna.Resources"
+             x:Name="this">
+
+    <Grid IsVisible="{Binding IsOpen, Source={x:Reference this}}"
+          BackgroundColor="#CC000000"
+          Padding="20">
+        <Grid.GestureRecognizers>
+            <TapGestureRecognizer Tapped="OnCloseClicked"/>
+        </Grid.GestureRecognizers>
+        <Border BackgroundColor="{AppThemeBinding Light={StaticResource CardLight}, Dark={StaticResource CardDark}}"
+                StrokeThickness="0"
+                VerticalOptions="Center"
+                HorizontalOptions="Center"
+                MaximumWidthRequest="380"
+                MaximumHeightRequest="520"
+                Padding="20">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="20"/>
+            </Border.StrokeShape>
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnWindowContentTapped"/>
+            </Border.GestureRecognizers>
+
+            <Grid RowDefinitions="Auto,*,Auto"
+                  RowSpacing="12">
+                <Label Grid.Row="0"
+                       Text="{helpers:Translate TitleSearchResults}"
+                       FontSize="22"
+                       FontAttributes="Bold"
+                       HorizontalOptions="Center"
+                       TextColor="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}"/>
+
+                <CollectionView Grid.Row="1"
+                                x:Name="ResultsList"
+                                SelectionMode="None">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border Stroke="Transparent"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource CardLightD}, Dark={StaticResource CardDarkL}}"
+                                    Padding="10"
+                                    Margin="0,5">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="8"/>
+                                </Border.StrokeShape>
+
+                                <Grid ColumnDefinitions="Auto, *, Auto, Auto"
+                                      ColumnSpacing="12">
+
+                                    <Grid Grid.Column="0"
+                                          WidthRequest="40"
+                                          HeightRequest="40"
+                                          VerticalOptions="Center">
+
+                                        <Label Text="{Binding DisplayEmoji}"
+                                               FontSize="24"
+                                               HorizontalOptions="Center"
+                                               VerticalOptions="Center"/>
+
+                                        <Image Source="{Binding DisplayFavicon}"
+                                               WidthRequest="40"
+                                               HeightRequest="40"
+                                               Aspect="AspectFit"
+                                               HorizontalOptions="Center"
+                                               VerticalOptions="Center">
+                                            <Image.Clip>
+                                                <RoundRectangleGeometry CornerRadius="8"
+                                                                        Rect="0,0,40,40"/>
+                                            </Image.Clip>
+                                        </Image>
+                                    </Grid>
+
+                                    <Label Grid.Column="1"
+                                           Text="{Binding DisplayName}"
+                                           FontSize="16"
+                                           FontAttributes="Bold"
+                                           VerticalOptions="Center"
+                                           TextColor="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}"/>
+
+                                    <Button Grid.Column="2"
+                                            Text="▶"
+                                            WidthRequest="40"
+                                            Clicked="OnPreviewClicked"
+                                            CommandParameter="{Binding .}"
+                                            VerticalOptions="Center">
+                                        <Button.Triggers>
+                                            <DataTrigger TargetType="Button"
+                                                         Binding="{Binding IsPreviewing}"
+                                                         Value="True">
+                                                <Setter Property="Text"
+                                                        Value="⏹"/>
+                                                <Setter Property="TextColor"
+                                                        Value="Orange"/>
+                                            </DataTrigger>
+                                        </Button.Triggers>
+                                    </Button>
+
+                                    <Button Grid.Column="3"
+                                            Text="{helpers:Translate BtnAdd}"
+                                            BackgroundColor="#03DAC6"
+                                            TextColor="Black"
+                                            Clicked="OnAddClicked"
+                                            CommandParameter="{Binding .}"
+                                            VerticalOptions="Center"/>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <Button Grid.Row="2"
+                        Text="{helpers:Translate DialogClose}"
+                        BackgroundColor="Transparent"
+                        TextColor="#FF5555"
+                        Clicked="OnCloseClicked"/>
+            </Grid>
+        </Border>
+    </Grid>
+</ContentView>

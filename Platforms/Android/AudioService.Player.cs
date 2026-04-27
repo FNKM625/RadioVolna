@@ -1,26 +1,32 @@
 ﻿// Plik: Platforms/Android/AudioService.Player.cs
-// (To jest ten "Native Player" - MediaPlayer)
+using System.Diagnostics;
+using System.Net.Http;
 using Android.Content;
 using Android.Media;
 using Android.OS;
-using System.Diagnostics;
-using System.Net.Http;
+using RadioVolna.Resources;
 
 namespace RadioVolna;
 
 public partial class AudioService
 {
-    // Logowanie
+    private CancellationTokenSource? _monitorCts;
+    private bool _shouldBePlaying = false;
+
+    private bool _isBuffering = false;
+    private DateTime _bufferingStartTime;
+
     private void Log(string message)
     {
         System.Diagnostics.Debug.WriteLine($"[RADIO_LOG] {message}");
-        Android.Util.Log.Info("RADIO_LOG", message);
     }
 
-    // ZMIANA NAZWY: InitializePlayer -> InitializeNativePlayer
     private void InitializeNativePlayer(string url)
     {
-        Log("Inicjalizacja: Native MediaPlayer (Silnik lekki)");
+        Log("Inicjalizacja: Native MediaPlayer (Strażnik + ErrorHandler)");
+
+        StopNativePlayer();
+
         try
         {
             _player = new MediaPlayer();
@@ -28,16 +34,27 @@ public partial class AudioService
 
             if (Build.VERSION.SdkInt >= BuildVersionCodes.Lollipop)
             {
-                _player.SetAudioAttributes(new AudioAttributes.Builder()
-                    .SetContentType(AudioContentType.Music)
-                    .SetUsage(AudioUsageKind.Media)
-                    .Build());
+                var attrBuilder = new AudioAttributes.Builder();
+                if (attrBuilder != null)
+                {
+                    attrBuilder.SetContentType(AudioContentType.Music);
+                    attrBuilder.SetUsage(AudioUsageKind.Media);
+
+                    var audioAttributes = attrBuilder.Build();
+                    if (audioAttributes != null)
+                        _player.SetAudioAttributes(audioAttributes);
+                }
             }
 
             var uri = Android.Net.Uri.Parse(url);
+            if (uri == null)
+            {
+                Log("Native Exception: uri == null");
+                return;
+            }
             var headers = new Dictionary<string, string>
             {
-                { "User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" }
+                { "User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" },
             };
 
             _player.SetDataSource(_context, uri, headers);
@@ -46,24 +63,68 @@ public partial class AudioService
             {
                 _player.Start();
                 _player.SetVolume(1.0f, 1.0f);
+
+                _retryCount = 0;
+                _shouldBePlaying = true;
+                _isBuffering = false;
+
                 IsPlayingChanged?.Invoke(this, true);
-                StatusChanged?.Invoke(this, $"Gra: {_currentStationName}");
+
+                string statusPlaying = LocalizationResourceManager.Instance["StatusPlaying"];
+                StatusChanged?.Invoke(this, $"{statusPlaying} {_currentStationName}");
+
                 UpdateSystemMediaInfo(true);
+
+                StartMonitoring(url);
             };
 
             _player.Info += (s, e) =>
             {
-                if (e.What == MediaInfo.BufferingStart) StatusChanged?.Invoke(this, "Buforowanie...");
-                else if (e.What == MediaInfo.BufferingEnd) StatusChanged?.Invoke(this, $"Gra: {_currentStationName}");
+                if (e.What == MediaInfo.BufferingStart)
+                {
+                    _isBuffering = true;
+                    _bufferingStartTime = DateTime.Now;
+                    StatusChanged?.Invoke(
+                        this,
+                        LocalizationResourceManager.Instance["StatusBuffering"]
+                    );
+                }
+                else if (e.What == MediaInfo.BufferingEnd)
+                {
+                    _isBuffering = false;
+                    _retryCount = 0;
+                    StatusChanged?.Invoke(
+                        this,
+                        $"{LocalizationResourceManager.Instance["StatusPlaying"]} {_currentStationName}"
+                    );
+                }
             };
 
-            _player.Error += (s, e) =>
+            _player.Error += async (s, e) =>
             {
-                if ((int)e.What != -38)
+                Log($"[Native Error Callback] Code: {e.What}");
+                if ((int)e.What == -38)
+                    return;
+
+                if (_retryCount < MaxRetries)
                 {
-                    Log($"Native Error: {(int)e.What}");
-                    StatusChanged?.Invoke(this, $"Błąd Native: {(int)e.What}");
-                    // W razie błędu native'a, można by tu dodać fallback do Exo, ale na razie tylko stop
+                    _retryCount++;
+                    string weakSignal = LocalizationResourceManager.Instance["StatusWeakSignal"];
+                    string msg = $"{weakSignal} ({_retryCount}/{MaxRetries})";
+                    Log($"[Error Handler] Błąd playera. {msg}");
+
+                    StatusChanged?.Invoke(this, msg);
+
+                    await Task.Delay(3000);
+
+                    InitializeNativePlayer(url);
+                }
+                else
+                {
+                    StatusChanged?.Invoke(
+                        this,
+                        LocalizationResourceManager.Instance["StatusConnectionError"]
+                    );
                     IsPlayingChanged?.Invoke(this, false);
                 }
             };
@@ -73,41 +134,132 @@ public partial class AudioService
         catch (Exception ex)
         {
             Log($"Native Exception: {ex.Message}");
+            Task.Run(async () =>
+            {
+                await Task.Delay(3000);
+                if (_retryCount < MaxRetries)
+                    InitializeNativePlayer(url);
+            });
         }
     }
 
     private void StopNativePlayer()
     {
+        if (_monitorCts != null)
+        {
+            _monitorCts.Cancel();
+            _monitorCts = null;
+        }
+
+        _shouldBePlaying = false;
+        _isBuffering = false;
+
         if (_player != null)
         {
-            try { if (_player.IsPlaying) _player.Stop(); } catch { }
-            try { _player.Release(); } catch { }
+            try
+            {
+                if (_player.IsPlaying)
+                    _player.Stop();
+                _player.Release();
+            }
+            catch { }
             _player = null;
         }
     }
 
-    // Metoda sprawdzająca format (zwraca teraz Task<string>)
+    private void StartMonitoring(string url)
+    {
+        if (_monitorCts != null)
+            _monitorCts.Cancel();
+        _monitorCts = new CancellationTokenSource();
+        var token = _monitorCts.Token;
+
+        Task.Run(async () =>
+        {
+            while (!token.IsCancellationRequested)
+            {
+                await Task.Delay(2000, token);
+
+                if (token.IsCancellationRequested)
+                    break;
+
+                try
+                {
+                    if (_shouldBePlaying)
+                    {
+                        bool needsRestart = false;
+                        string reason = "";
+
+                        if (_player == null || (!_player.IsPlaying && !_isBuffering))
+                        {
+                            needsRestart = true;
+                            reason = "Player zatrzymany";
+                        }
+
+                        if (_isBuffering && (DateTime.Now - _bufferingStartTime).TotalSeconds > 6)
+                        {
+                            needsRestart = true;
+                            reason = "Zwiecha buforowania (>6s)";
+                        }
+
+                        if (needsRestart)
+                        {
+                            if (_retryCount < MaxRetries)
+                            {
+                                _retryCount++;
+                                string weakSignal = LocalizationResourceManager.Instance[
+                                    "StatusWeakSignal"
+                                ];
+                                string msg = $"{weakSignal} ({_retryCount}/{MaxRetries})";
+                                Log($"[Strażnik] Wykryto problem: {reason}. {msg}");
+
+                                MainThread.BeginInvokeOnMainThread(() =>
+                                    StatusChanged?.Invoke(this, msg)
+                                );
+
+                                MainThread.BeginInvokeOnMainThread(() =>
+                                    InitializeNativePlayer(url)
+                                );
+
+                                break;
+                            }
+                            else
+                            {
+                                MainThread.BeginInvokeOnMainThread(() =>
+                                {
+                                    StatusChanged?.Invoke(
+                                        this,
+                                        LocalizationResourceManager.Instance["StatusNoNetwork"]
+                                    );
+                                    IsPlayingChanged?.Invoke(this, false);
+                                    StopNativePlayer();
+                                });
+                                break;
+                            }
+                        }
+                    }
+                }
+                catch (Exception) { }
+            }
+        });
+    }
+
     private async Task<string> CheckStreamFormatAsync(string url)
     {
-        Log($"Sprawdzam nagłówki: {url}");
         try
         {
-            using (var client = new HttpClient())
-            {
-                client.Timeout = TimeSpan.FromSeconds(5);
-                client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0");
-                var request = new HttpRequestMessage(HttpMethod.Head, url);
-                var response = await client.SendAsync(request);
+            var request = new HttpRequestMessage(HttpMethod.Head, url);
+            var response = await _httpClient.SendAsync(request);
 
-                if (response.Content.Headers.ContentType != null)
-                {
-                    string mime = response.Content.Headers.ContentType.MediaType;
-                    Log($"Wykryto format: {mime}");
-                    return mime;
-                }
-            }
+            var mediaType = response.Content.Headers.ContentType?.MediaType;
+            if (!string.IsNullOrWhiteSpace(mediaType))
+                return mediaType;
+
+            return "unknown";
         }
-        catch (Exception ex) { Log($"Błąd sprawdzania: {ex.Message}"); }
-        return "unknown";
+        catch
+        {
+            return "unknown";
+        }
     }
 }

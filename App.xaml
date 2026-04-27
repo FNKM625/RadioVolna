@@ -6,9 +6,28 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="Resources/Styles/Colors.xaml" />
-                <ResourceDictionary Source="Resources/Styles/Styles.xaml" />
+                <ResourceDictionary Source="Resources/Styles/Colors.xaml"/>
+                <ResourceDictionary Source="Resources/Styles/Styles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+
+            <Color x:Key="BgLight">#F0F0F0</Color>
+            <Color x:Key="BgDark">#121212</Color>
+            <Color x:Key="BgGrey">#D4D4D4</Color>
+
+            <Color x:Key="CardLight">#FFFFFF</Color>
+            <Color x:Key="CardDark">#2D2D2D</Color>
+            <Color x:Key="CardDarkL">#999999</Color>
+            <Color x:Key="CardLightD">#D4D4D4</Color>
+
+            <Color x:Key="TextLight">#000000</Color>
+            <Color x:Key="TextDark">#FFFFFF</Color>
+
+            <Color x:Key="SubTextLight">#666666</Color>
+            <Color x:Key="SubTextDark">#999999</Color>
+
+            <Color x:Key="BCLight">#E7180B</Color>
+            <Color x:Key="BCDardk">#B00020</Color>
+
         </ResourceDictionary>
     </Application.Resources>
 </Application>

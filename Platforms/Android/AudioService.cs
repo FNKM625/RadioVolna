@@ -5,16 +5,27 @@ using Android.Media;
 using Android.Media.Session;
 using Android.Net.Wifi;
 using Android.OS;
+using Android.Service.Media;
+using AndroidX.Media;
+using RadioVolna.Resources;
 
 namespace RadioVolna;
 
-public partial class AudioService : Java.Lang.Object, IAudioService, AudioManager.IOnAudioFocusChangeListener
+[Service(Exported = true)]
+[IntentFilter(new[] { "android.media.browse.MediaBrowserService" })]
+public partial class AudioService
+    : MediaBrowserServiceCompat,
+        IAudioService,
+        AudioManager.IOnAudioFocusChangeListener
 {
+    private static readonly HttpClient _httpClient = new HttpClient
+    {
+        Timeout = TimeSpan.FromSeconds(5),
+    };
     private Context _context;
-    // Native player
     private MediaPlayer? _player;
+    private string _lastUrl = "";
 
-    // Flaga: Czy używamy aktualnie ExoPlayera?
     private bool _isUsingExoPlayer = false;
 
     private AudioManager? _audioManager;
@@ -39,49 +50,71 @@ public partial class AudioService : Java.Lang.Object, IAudioService, AudioManage
         InitializeMediaSession();
         CreateNotificationChannel();
         RegisterNotificationReceiver();
+
+        try
+        {
+            if (_mediaSession != null)
+            {
+                var compatToken =
+                    Android.Support.V4.Media.Session.MediaSessionCompat.Token.FromToken(
+                        _mediaSession.SessionToken
+                    );
+                this.SessionToken = compatToken;
+            }
+        }
+        catch { }
     }
 
     // --- LOGIKA HYBRYDOWA ---
     public async void Play(string url, string stationName)
     {
-        if (!RequestAudioFocus()) { StatusChanged?.Invoke(this, "Audio zajęte"); return; }
+        _lastUrl = url;
+
+        if (!RequestAudioFocus())
+        {
+            StatusChanged?.Invoke(this, LocalizationResourceManager.Instance["StatusAudioBusy"]);
+            return;
+        }
 
         _currentStationName = stationName;
-        StatusChanged?.Invoke(this, "Sprawdzam strumień...");
+        StatusChanged?.Invoke(this, LocalizationResourceManager.Instance["StatusCheckingStream"]);
 
-        // 1. Zatrzymaj wszystko co grało wcześniej
         StopInternal();
         AcquireLocks();
 
-        // 2. Sprawdź format (Native czy Exo?)
         string mimeType = await CheckStreamFormatAsync(url);
-        bool isMp3 = mimeType.Equals("audio/mpeg", StringComparison.OrdinalIgnoreCase) ||
-                     mimeType.Equals("audio/mp3", StringComparison.OrdinalIgnoreCase) ||
-                     mimeType.Equals("text/plain", StringComparison.OrdinalIgnoreCase);
+        bool isMp3 =
+            mimeType.Equals("audio/mpeg", StringComparison.OrdinalIgnoreCase)
+            || mimeType.Equals("audio/mp3", StringComparison.OrdinalIgnoreCase)
+            || mimeType.Equals("text/plain", StringComparison.OrdinalIgnoreCase);
 
-        // 3. Wybierz silnik
         if (isMp3)
         {
             _isUsingExoPlayer = false;
-            InitializeNativePlayer(url); // Użyj MediaPlayer
+            InitializeNativePlayer(url);
         }
         else
         {
-            // AAC+, OGG, lub nieznany -> bezpieczniej użyć ExoPlayera
             _isUsingExoPlayer = true;
-            InitializeExoPlayer(url); // Użyj ExoPlayer
+            InitializeExoPlayer(url);
         }
 
         RegisterNoisyReceiver();
+        _shouldBePlaying = true;
     }
 
     public void Pause()
     {
-        if (_isUsingExoPlayer) PauseExoPlayer();
-        else if (_player != null && _player.IsPlaying) _player.Pause();
+        _shouldBePlaying = false;
+
+        if (_isUsingExoPlayer)
+            PauseExoPlayer();
+        else if (_player != null && _player.IsPlaying)
+            _player.Pause();
 
         IsPlayingChanged?.Invoke(this, false);
-        StatusChanged?.Invoke(this, "Wstrzymano");
+        StatusChanged?.Invoke(this, LocalizationResourceManager.Instance["NotifPaused"]);
+
         UpdateSystemMediaInfo(false);
         ReleaseLocks();
         UnregisterNoisyReceiver();
@@ -89,9 +122,12 @@ public partial class AudioService : Java.Lang.Object, IAudioService, AudioManage
 
     public void Resume()
     {
-        if (!RequestAudioFocus()) return;
+        if (!RequestAudioFocus())
+            return;
         AcquireLocks();
         RegisterNoisyReceiver();
+
+        _shouldBePlaying = true;
 
         if (_isUsingExoPlayer)
         {
@@ -99,23 +135,27 @@ public partial class AudioService : Java.Lang.Object, IAudioService, AudioManage
         }
         else
         {
-            if (_player != null && !_player.IsPlaying) _player.Start();
-            else Play("", _currentStationName); // Fallback
+            if (_player != null && !_player.IsPlaying)
+                _player.Start();
+            else
+                Play(_lastUrl, _currentStationName);
         }
 
         IsPlayingChanged?.Invoke(this, true);
-        StatusChanged?.Invoke(this, "Gra");
+        StatusChanged?.Invoke(this, LocalizationResourceManager.Instance["StatusPlayingGeneric"]);
         UpdateSystemMediaInfo(true);
     }
 
     public void Stop()
     {
+        _shouldBePlaying = false;
         AbandonAudioFocus();
         StopInternal();
         IsPlayingChanged?.Invoke(this, false);
-        StatusChanged?.Invoke(this, "Zatrzymano");
+        StatusChanged?.Invoke(this, LocalizationResourceManager.Instance["StatusStopped"]);
         _notificationManager?.Cancel(NotificationId);
-        if (_mediaSession != null) _mediaSession.Active = false;
+        if (_mediaSession != null)
+            _mediaSession.Active = false;
     }
 
     private void StopInternal()
@@ -136,9 +176,14 @@ public partial class AudioService : Java.Lang.Object, IAudioService, AudioManage
             if (_wifiLock == null)
             {
                 var wm = _context.GetSystemService(Context.WifiService) as WifiManager;
-                if (wm != null) _wifiLock = wm.CreateWifiLock(Android.Net.WifiMode.FullHighPerf, "RadioVolnaWifiLock");
+                if (wm != null)
+                    _wifiLock = wm.CreateWifiLock(
+                        Android.Net.WifiMode.FullHighPerf,
+                        "RadioVolnaWifiLock"
+                    );
             }
-            if (_wifiLock != null && !_wifiLock.IsHeld) _wifiLock.Acquire();
+            if (_wifiLock != null && !_wifiLock.IsHeld)
+                _wifiLock.Acquire();
         }
         catch { }
 
@@ -147,16 +192,58 @@ public partial class AudioService : Java.Lang.Object, IAudioService, AudioManage
             if (_powerWakeLock == null)
             {
                 var pm = _context.GetSystemService(Context.PowerService) as PowerManager;
-                if (pm != null) _powerWakeLock = pm.NewWakeLock(WakeLockFlags.Partial, "RadioVolnaPowerLock");
+                if (pm != null)
+                    _powerWakeLock = pm.NewWakeLock(WakeLockFlags.Partial, "RadioVolnaPowerLock");
             }
-            if (_powerWakeLock != null && !_powerWakeLock.IsHeld) _powerWakeLock.Acquire();
+            if (_powerWakeLock != null && !_powerWakeLock.IsHeld)
+                _powerWakeLock.Acquire();
         }
         catch { }
     }
 
     private void ReleaseLocks()
     {
-        try { if (_wifiLock != null && _wifiLock.IsHeld) _wifiLock.Release(); } catch { }
-        try { if (_powerWakeLock != null && _powerWakeLock.IsHeld) _powerWakeLock.Release(); } catch { }
+        try
+        {
+            if (_wifiLock != null && _wifiLock.IsHeld)
+                _wifiLock.Release();
+        }
+        catch { }
+        try
+        {
+            if (_powerWakeLock != null && _powerWakeLock.IsHeld)
+                _powerWakeLock.Release();
+        }
+        catch { }
+    }
+
+    private int _retryCount = 0;
+    public const int MaxRetries = 30;
+
+    private async void AttemptReconnect()
+    {
+        if (!_shouldBePlaying)
+            return;
+
+        _retryCount++;
+        string logPrefix = LocalizationResourceManager.Instance["LogReconnectTry"];
+        System.Diagnostics.Debug.WriteLine(
+            $"[AudioService] {logPrefix} {_retryCount}/{MaxRetries}..."
+        );
+
+        string weakSignal = LocalizationResourceManager.Instance["StatusWeakSignal"];
+        StatusChanged?.Invoke(this, $"{weakSignal} ({_retryCount}/{MaxRetries})");
+
+        await Task.Delay(3000);
+
+        if (_isUsingExoPlayer && _exoPlayer != null)
+        {
+            _exoPlayer.Prepare();
+            _exoPlayer.PlayWhenReady = true;
+        }
+        else if (!_isUsingExoPlayer && _shouldBePlaying)
+        {
+            Play(_lastUrl, _currentStationName);
+        }
     }
 }

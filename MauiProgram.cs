@@ -15,9 +15,9 @@ public static class MauiProgram
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
             });
 
-        #if ANDROID
+#if ANDROID
         builder.Services.AddSingleton<IAudioService, AudioService>();
-        #endif
+#endif
 
         builder.Services.AddSingleton<MainPage>();
 
