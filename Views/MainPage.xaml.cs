@@ -584,18 +584,40 @@ public partial class MainPage : ContentPage
 
                 if (latestBuild > currentBuild)
                 {
-                    string title = LocalizationResourceManager.Instance["UpdateTitle"];
-                    string btnYes = LocalizationResourceManager.Instance["UpdateYes"];
-                    string btnNo = LocalizationResourceManager.Instance["UpdateNo"];
+                    string ignoredBuild = Preferences.Default.Get(
+                        "IgnoredUpdateBuild",
+                        string.Empty
+                    );
 
-                    string messageTemplate = LocalizationResourceManager.Instance["UpdateMessage"];
-                    string message = string.Format(messageTemplate, latestVersion);
-
-                    bool answer = await DisplayAlert(title, message, btnYes, btnNo);
-
-                    if (answer)
+                    if (latestBuildStr != ignoredBuild)
                     {
-                        await Launcher.OpenAsync(downloadUrl);
+                        string title = LocalizationResourceManager.Instance["UpdateTitle"];
+                        string btnYes = LocalizationResourceManager.Instance["UpdateYes"];
+                        string btnNo = LocalizationResourceManager.Instance["UpdateNo"];
+
+                        string btnSkip = LocalizationResourceManager.Instance["UpdateSkip"];
+
+                        string messageTemplate = LocalizationResourceManager.Instance[
+                            "UpdateMessage"
+                        ];
+                        string message = string.Format(messageTemplate, latestVersion);
+
+                        string action = await DisplayActionSheet(
+                            $"{title}\n{message}",
+                            btnNo,
+                            null,
+                            btnYes,
+                            btnSkip
+                        );
+
+                        if (action == btnYes)
+                        {
+                            await Launcher.OpenAsync(downloadUrl);
+                        }
+                        else if (action == btnSkip)
+                        {
+                            Preferences.Default.Set("IgnoredUpdateBuild", latestBuildStr);
+                        }
                     }
                 }
             }
