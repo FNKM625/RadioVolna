@@ -554,4 +554,50 @@ public partial class MainPage : ContentPage
             StopPreviewAndResumePrevious(previewingStation);
         }
     }
+
+    private async void CheckForUpdatesAsync()
+    {
+        try
+        {
+            // Podmień na Twój link z GitHuba do pliku version.json (wersja RAW)
+            string versionUrl = "https://github.com/FNKM625/RadioVolna/blob/Convertor/version.json";
+            using var client = new HttpClient();
+            var response = await client.GetAsync(versionUrl);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync();
+                using var doc = System.Text.Json.JsonDocument.Parse(json);
+
+                string? latestVersion = doc.RootElement.GetProperty("latestVersion").GetString();
+                string? downloadUrl = doc.RootElement.GetProperty("downloadUrl").GetString();
+
+                string currentVersion = AppInfo.Current.VersionString;
+
+                // Porównujemy wersje (jeśli w pliku jest np. 1.4, a my mamy 1.3)
+                if (!string.IsNullOrEmpty(latestVersion) && currentVersion != latestVersion)
+                {
+                    // Wyrzuca okienko z zapytaniem
+                    bool answer = await DisplayAlert(
+                        "Dostępna aktualizacja",
+                        $"Nowa wersja aplikacji ({latestVersion}) jest dostępna! Czy chcesz ją pobrać?",
+                        "Tak",
+                        "Nie"
+                    );
+
+                    if (answer)
+                    {
+                        // Otwiera przeglądarkę i przenosi użytkownika do pobierania
+                        await Launcher.OpenAsync(downloadUrl);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(
+                $"Błąd podczas sprawdzania aktualizacji: {ex.Message}"
+            );
+        }
+    }
 }
