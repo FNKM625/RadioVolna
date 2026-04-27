@@ -2,34 +2,42 @@
 setlocal enabledelayedexpansion
 title Radio Volna - Generator APK
 
-:: --- KONFIGURACJA ---
+REM --- KONFIGURACJA ---
 set "PROJECT_FILE=RadioVolna.csproj"
+set "VERSION_FILE=version.json"
 set "BASE_NAME=RadioVolna"
 set "FRAMEWORK=net8.0-android"
 set "OUTPUT_FOLDER=apk"
-:: --------------------
 
 echo ==========================================
 echo      GENERATOR APK - RADIO VOLNA
 echo ==========================================
 echo.
 
-:: 1. Pobieranie numeru wersji z pliku .csproj
+REM 1. Pobieranie numerow wersji z pliku .csproj
 echo [INFO] Szukam numeru wersji w pliku %PROJECT_FILE%...
-set "APP_VERSION=Unknown"
+set "APP_DISPLAY_VERSION=Unknown"
+set "APP_BUILD_VERSION=Unknown"
 
-for /f "tokens=*" %%i in ('powershell -command "Select-String -Path %PROJECT_FILE% -Pattern '<ApplicationVersion>(\d+)</ApplicationVersion>' | ForEach-Object { $_.Matches.Groups[1].Value }"') do set APP_VERSION=%%i
+for /f "tokens=*" %%i in ('powershell -command "$xml=[xml](Get-Content '%PROJECT_FILE%'); foreach($pg in $xml.Project.PropertyGroup) { if($pg.Condition -match 'Release\|net8\.0-android') { Write-Output $pg.ApplicationDisplayVersion } }"') do set APP_DISPLAY_VERSION=%%i
 
-if "%APP_VERSION%"=="Unknown" (
+for /f "tokens=*" %%i in ('powershell -command "$xml=[xml](Get-Content '%PROJECT_FILE%'); foreach($pg in $xml.Project.PropertyGroup) { if($pg.Condition -match 'Release\|net8\.0-android') { Write-Output $pg.ApplicationVersion } }"') do set APP_BUILD_VERSION=%%i
+
+if "%APP_DISPLAY_VERSION%"=="Unknown" (
     echo [OSTRZEZENIE] Nie udalo sie odczytac wersji. Ustawiam V1.
-    set "APP_VERSION=1"
+    set "APP_DISPLAY_VERSION=1"
+    set "APP_BUILD_VERSION=1"
 ) else (
-    echo [INFO] Wykryto wersje projektu: %APP_VERSION%
+    echo [INFO] Wykryto wersje: %APP_DISPLAY_VERSION% ^(Build: %APP_BUILD_VERSION%^)
 )
 
-set "DEFAULT_NAME=%BASE_NAME%_V%APP_VERSION%.apk"
+REM 2. Aktualizacja pliku version.json
+echo [INFO] Aktualizuje plik %VERSION_FILE%...
+powershell -command "$file='%VERSION_FILE%'; if(Test-Path $file) { $json=Get-Content $file -Raw | ConvertFrom-Json; $json.latestVersion='%APP_DISPLAY_VERSION%'; $json.latestBuild='%APP_BUILD_VERSION%'; $json | ConvertTo-Json | Set-Content $file -Encoding UTF8; Write-Output '       [SUKCES] Zapisano nowe wersje do JSON.' } else { Write-Output '       [OSTRZEZENIE] Brak pliku %VERSION_FILE% - pomijam aktualizacje.' }"
 
-:: 2. Pytanie o nazwę pliku
+set "DEFAULT_NAME=%BASE_NAME%_V%APP_DISPLAY_VERSION%.apk"
+
+REM 3. Pytanie o nazwe pliku
 echo.
 set /p "USER_NAME=Podaj nazwe pliku (Wcisnij ENTER aby uzyc '%DEFAULT_NAME%'): "
 
@@ -42,8 +50,8 @@ echo [INFO] Folder docelowy: \%OUTPUT_FOLDER%\
 echo [INFO] Rozpoczynam budowanie...
 echo.
 
-:: 3. Komenda budowania - TERAZ WSKAZUJEMY KONKRETNY PLIK PROJEKTU
-dotnet publish %PROJECT_FILE% -f %FRAMEWORK% -c Release -p:AndroidPackageFormat=apk
+REM 4. Komenda budowania
+dotnet publish "%PROJECT_FILE%" -f %FRAMEWORK% -c Release -p:AndroidPackageFormat=apk
 
 if %ERRORLEVEL% NEQ 0 (
     color 4
@@ -61,38 +69,31 @@ if not exist "%OUTPUT_FOLDER%" (
     mkdir "%OUTPUT_FOLDER%"
 )
 
-:: 4. Przenoszenie pliku
+REM 5. Przenoszenie pliku
 set "SOURCE_DIR=bin\Release\%FRAMEWORK%\publish"
-set "FOUND=0"
 
 for %%F in ("%SOURCE_DIR%\*-Signed.apk") do (
     echo [INFO] Znaleziono podpisana wersje: %%~nxF
     copy /Y "%%F" ".\%OUTPUT_FOLDER%\%USER_NAME%" >nul
     if !ERRORLEVEL! EQU 0 (
-        set "FOUND=1"
         echo [SUKCES] Plik gotowy: \%OUTPUT_FOLDER%\%USER_NAME%
     )
 )
 
-if %FOUND% EQU 0 (
-    echo [INFO] Nie znaleziono wersji -Signed, szukam zwyklej...
-    for %%F in ("%SOURCE_DIR%\*.apk") do (
-        copy /Y "%%F" ".\%OUTPUT_FOLDER%\%USER_NAME%" >nul
-        set "FOUND=1"
-        echo [SUKCES] Plik gotowy (niepodpisany): \%OUTPUT_FOLDER%\%USER_NAME%
-    )
-)
+REM --- AUTOMATYCZNE WGRYWANIE NA GOOGLE DRIVE ---
+set "DRIVE_FILE_ID=1rV71ArRDhjOIr_YMqvDDZx8TSAqs7iEt"
 
-if %FOUND% EQU 0 (
-    color 6
-    echo.
-    echo [OSTRZEZENIE] Nie znaleziono zadnego pliku APK!
+echo.
+echo [INFO] Rozpoczynam wysylanie nowej wersji na Dysk Google...
+
+gdrive.exe files update %DRIVE_FILE_ID% ".\%OUTPUT_FOLDER%\%USER_NAME%"
+
+if %ERRORLEVEL% EQU 0 (
+    echo [SUKCES] Plik zostal podmieniony na Dysku Google jako nowa wersja.
+    echo [INFO] Stary link nadal dziala i pobiera najnowszy plik!
 ) else (
-    color 2
-    echo.
-    echo ==========================================
-    echo   GOTOWE! Sprawdz folder "apk".
-    echo ==========================================
+    echo [BLAD] Cos poszlo nie tak z wysylaniem na Dysk. 
+    echo [INFO] Sprawdz czy gdrive.exe jest w folderze i czy masz internet.
 )
 
 pause

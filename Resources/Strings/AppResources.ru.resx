@@ -307,4 +307,17 @@
   <data name="PlaceholderTags" xml:space="preserve">
     <value>Теги: рок, новости</value>
   </data>
+  
+  <data name="UpdateTitle" xml:space="preserve">
+    <value>Доступно обновление</value>
+  </data>
+  <data name="UpdateMessage" xml:space="preserve">
+    <value>Доступна новая версия приложения ({0})! Хотите скачать ее?</value>
+  </data>
+  <data name="UpdateYes" xml:space="preserve">
+    <value>Да</value>
+  </data>
+  <data name="UpdateNo" xml:space="preserve">
+    <value>Нет</value>
+  </data>
 </root>

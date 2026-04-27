@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Threading.Tasks;
 using RadioVolna.Resources;
 using RadioVolna.Services;
 
@@ -555,12 +556,12 @@ public partial class MainPage : ContentPage
         }
     }
 
-    private async void CheckForUpdatesAsync()
+    private async Task CheckForUpdatesAsync()
     {
         try
         {
-            // Podmień na Twój link z GitHuba do pliku version.json (wersja RAW)
-            string versionUrl = "https://github.com/FNKM625/RadioVolna/blob/Convertor/version.json";
+            string versionUrl =
+                "https://raw.githubusercontent.com/FNKM625/RadioVolna/refs/heads/Convertor/version.json?token=GHSAT0AAAAAADXKFN3SKVXTNRWWFSUHGP6E2PPMWLQ";
             using var client = new HttpClient();
             var response = await client.GetAsync(versionUrl);
 
@@ -578,20 +579,19 @@ public partial class MainPage : ContentPage
                 int currentBuild = 0;
                 int.TryParse(AppInfo.Current.BuildString, out currentBuild);
 
-                // Zamieniamy build z GitHuba na liczbę
                 int latestBuild = 0;
                 int.TryParse(latestBuildStr, out latestBuild);
 
-                // Matematyczne porównanie: jeśli build na serwerze jest wyższy niż nasz
                 if (latestBuild > currentBuild)
                 {
-                    // Wyrzuca okienko z zapytaniem
-                    bool answer = await DisplayAlert(
-                        "Dostępna aktualizacja",
-                        $"Nowa wersja aplikacji ({latestVersion}) jest dostępna! Czy chcesz ją pobrać?",
-                        "Tak",
-                        "Nie"
-                    );
+                    string title = LocalizationResourceManager.Instance["UpdateTitle"];
+                    string btnYes = LocalizationResourceManager.Instance["UpdateYes"];
+                    string btnNo = LocalizationResourceManager.Instance["UpdateNo"];
+
+                    string messageTemplate = LocalizationResourceManager.Instance["UpdateMessage"];
+                    string message = string.Format(messageTemplate, latestVersion);
+
+                    bool answer = await DisplayAlert(title, message, btnYes, btnNo);
 
                     if (answer)
                     {
@@ -606,5 +606,12 @@ public partial class MainPage : ContentPage
                 $"Błąd podczas sprawdzania aktualizacji: {ex.Message}"
             );
         }
+    }
+
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+
+        _ = CheckForUpdatesAsync();
     }
 }

@@ -309,4 +309,16 @@
   <data name="PlaceholderTags" xml:space="preserve">
     <value>Tags: rock, news</value>
   </data>
+  <data name="UpdateTitle" xml:space="preserve">
+    <value>Update Available</value>
+  </data>
+  <data name="UpdateMessage" xml:space="preserve">
+    <value>A new version of the app ({0}) is available! Do you want to download it?</value>
+  </data>
+  <data name="UpdateYes" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="UpdateNo" xml:space="preserve">
+    <value>No</value>
+  </data>
 </root>

@@ -364,3 +364,5 @@ FodyWeavers.xsd
 
 # Buildet application packages
 apk/
+
+gdrive.exe

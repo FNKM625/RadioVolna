@@ -344,4 +344,16 @@
   <data name="PlaceholderTags" xml:space="preserve">
     <value>Tagi: rock, wiadomości</value>
   </data>
+  <data name="UpdateTitle" xml:space="preserve">
+    <value>Dostępna aktualizacja</value>
+  </data>
+  <data name="UpdateMessage" xml:space="preserve">
+    <value>Nowa wersja aplikacji ({0}) jest dostępna! Czy chcesz ją pobrać?</value>
+  </data>
+  <data name="UpdateYes" xml:space="preserve">
+    <value>Tak</value>
+  </data>
+  <data name="UpdateNo" xml:space="preserve">
+    <value>Nie</value>
+  </data>
 </root>
