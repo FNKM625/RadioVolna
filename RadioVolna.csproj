@@ -59,7 +59,7 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-android|AnyCPU'">
     <ApplicationVersion>7</ApplicationVersion>
-    <ApplicationDisplayVersion>1.5.1</ApplicationDisplayVersion>
+    <ApplicationDisplayVersion>1.5.2</ApplicationDisplayVersion>
     <EmbedAssembliesIntoApk>True</EmbedAssembliesIntoApk>
   </PropertyGroup>
 

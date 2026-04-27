@@ -569,13 +569,21 @@ public partial class MainPage : ContentPage
                 var json = await response.Content.ReadAsStringAsync();
                 using var doc = System.Text.Json.JsonDocument.Parse(json);
 
-                string? latestVersion = doc.RootElement.GetProperty("latestVersion").GetString();
-                string? downloadUrl = doc.RootElement.GetProperty("downloadUrl").GetString();
+                string latestVersion =
+                    doc.RootElement.GetProperty("latestVersion").GetString() ?? "";
+                string latestBuildStr =
+                    doc.RootElement.GetProperty("latestBuild").GetString() ?? "0";
+                string downloadUrl = doc.RootElement.GetProperty("downloadUrl").GetString() ?? "";
 
-                string currentVersion = AppInfo.Current.VersionString;
+                int currentBuild = 0;
+                int.TryParse(AppInfo.Current.BuildString, out currentBuild);
 
-                // Porównujemy wersje (jeśli w pliku jest np. 1.4, a my mamy 1.3)
-                if (!string.IsNullOrEmpty(latestVersion) && currentVersion != latestVersion)
+                // Zamieniamy build z GitHuba na liczbę
+                int latestBuild = 0;
+                int.TryParse(latestBuildStr, out latestBuild);
+
+                // Matematyczne porównanie: jeśli build na serwerze jest wyższy niż nasz
+                if (latestBuild > currentBuild)
                 {
                     // Wyrzuca okienko z zapytaniem
                     bool answer = await DisplayAlert(
@@ -587,7 +595,6 @@ public partial class MainPage : ContentPage
 
                     if (answer)
                     {
-                        // Otwiera przeglądarkę i przenosi użytkownika do pobierania
                         await Launcher.OpenAsync(downloadUrl);
                     }
                 }
