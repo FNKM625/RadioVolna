@@ -315,10 +315,19 @@
   <data name="UpdateMessage" xml:space="preserve">
     <value>A new version of the app ({0}) is available! Do you want to download it?</value>
   </data>
-  <data name="UpdateYes" xml:space="preserve">
-    <value>Yes</value>
+  <data name="BtnDownload" xml:space="preserve">
+    <value>Download and Install</value>
   </data>
-  <data name="UpdateNo" xml:space="preserve">
-    <value>No</value>
+  <data name="BtnLater" xml:space="preserve">
+    <value>Later</value>
+  </data>
+  <data name="BtnSkipVersion" xml:space="preserve">
+    <value>Skip this version</value>
+  </data>
+  <data name="BtnCheckForUpdates" xml:space="preserve">
+    <value>Check for Updates</value>
+  </data>
+  <data name="MsgUpToDate" xml:space="preserve">
+    <value>No updates available!</value>
   </data>
 </root>

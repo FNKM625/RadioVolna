@@ -314,10 +314,19 @@
   <data name="UpdateMessage" xml:space="preserve">
     <value>Доступна новая версия приложения ({0})! Хотите скачать ее?</value>
   </data>
-  <data name="UpdateYes" xml:space="preserve">
-    <value>Да</value>
+  <data name="BtnDownload" xml:space="preserve">
+    <value>Скачать и установить</value>
   </data>
-  <data name="UpdateNo" xml:space="preserve">
-    <value>Нет</value>
+  <data name="BtnLater" xml:space="preserve">
+    <value>Позже</value>
+  </data>
+  <data name="BtnSkipVersion" xml:space="preserve">
+    <value>Пропустить эту версию</value>
+  </data>
+  <data name="BtnCheckForUpdates" xml:space="preserve">
+    <value>Проверить обновления</value>
+  </data>
+  <data name="MsgUpToDate" xml:space="preserve">
+    <value>Нет доступных обновлений!</value>
   </data>
 </root>

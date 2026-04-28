@@ -1,62 +1,67 @@
 # 📻 Radio Volna
 
-![Wersja](https://img.shields.io/badge/wersja-1.6.4-blue)
-![Platforma](https://img.shields.io/badge/Platforma-Android-brightgreen?logo=android&logoColor=white)
+🌍 Available languages / Dostępne języki: [English](README.md) | [Polski](README.pl.md)
+
+![Version](https://img.shields.io/badge/version-1.6.4-blue)
+![Platform](https://img.shields.io/badge/Platform-Android-brightgreen?logo=android&logoColor=white)
 ![Framework](https://img.shields.io/badge/Framework-.NET%20MAUI%208.0-purple?logo=dotnet&logoColor=white)
-![Język](https://img.shields.io/badge/Język-C%23-239120?logo=csharp&logoColor=white)
+![Language](https://img.shields.io/badge/Language-C%23-239120?logo=csharp&logoColor=white)
 
-**Nowoczesna i lekka aplikacja do słuchania radia internetowego zbudowana w technologii .NET MAUI.**
+**A modern and lightweight internet radio application...**
 
-Radio Volna to autorski projekt odtwarzacza radiowego na system Android, zaprojektowany z myślą o stabilności połączenia i wysokiej jakości dźwięku. Aplikacja inteligentnie dobiera silnik odtwarzania w zależności od formatu strumienia stacji.
+## 📥 Download the App
+You can download the latest compiled APK version directly to your Android device using the link below:
 
----
-
-## ✨ Kluczowe Funkcje
-* **Hybrydowy Silnik Audio:** Wykorzystuje zaawansowany **ExoPlayer (Media3)** dla strumieni HLS (m3u8) oraz natywny Android **MediaPlayer** dla standardowych linków audio.
-* **Odtwarzanie w tle:** Pełne wsparcie dla usług systemowych (Foreground Service), co pozwala na słuchanie radia przy wyłączonym ekranie.
-* **Inteligentne Zarządzanie Dźwiękiem:**
-    * Automatyczna pauza po odłączeniu słuchawek lub głośnika Bluetooth (Noisy Audio).
-    * Wsparcie dla **Audio Focus** – aplikacja wycisza się podczas nadchodzących połączeń i komunikatów nawigacji.
-* **System Aktualizacji:** Automatyczne sprawdzanie dostępności nowej wersji aplikacji bezpośrednio z repozytorium GitHub.
-* **Wielojęzyczność:** Pełne wsparcie dla lokalizacji (Resource Files), aktualnie dostępne w języku polskim i rosyjskim.
+**[⬇️ Download Radio Volna (.apk)](https://drive.google.com/uc?export=download&id=1rV71ArRDhjOIr_YMqvDDZx8TSAqs7iEt)**
 
 ---
 
-## 🛠️ Technologie i Narzędzia
-* **.NET MAUI 8.0** – wieloplatformowy framework od Microsoft.
-* **Android Native API** – bezpośrednie wykorzystanie usług systemowych Androida dla zapewnienia stabilności.
-* **GitHub API** – mechanizm sprawdzania wersji i dostarczania aktualizacji.
-* **C# / XAML** – czysty i czytelny kod źródłowy zgodny z wzorcem MVVM.
+## ✨ Key Features
+* **Hybrid Audio Engine:** Utilizes the advanced **ExoPlayer (Media3)** for HLS streams (m3u8) and the native Android **MediaPlayer** for standard audio links.
+* **Background Playback:** Full support for system services (Foreground Service), allowing you to listen to the radio with the screen turned off.
+* **Smart Audio Management:**
+    * Automatic pause upon disconnecting headphones or Bluetooth speakers (Noisy Audio).
+    * Support for **Audio Focus** – the app mutes itself during incoming calls and navigation prompts.
+* **Update System:** Automatic checks for new application versions directly from the GitHub repository.
+* **Multilingual:** Full support for localization (Resource Files), currently available in Polish and Russian.
 
 ---
 
-## 🚀 Jak uruchomić projekt?
+## 🛠️ Technologies & Tools
+* **.NET MAUI 8.0** – a cross-platform framework by Microsoft.
+* **Android Native API** – direct use of Android system services to ensure stability.
+* **GitHub API** – mechanism for version checking and delivering updates.
+* **C# / XAML** – clean and readable source code compliant with the MVVM pattern.
 
-### Wymagania
-* Visual Studio 2022 (z zainstalowanym obciążeniem `.NET MAUI`).
-* Android SDK (API Level 26 lub nowsze).
+---
 
-### Instalacja
-1.  Sklonuj repozytorium:
+## 🚀 How to run the project?
+
+### Requirements
+* Visual Studio 2022 (with the `.NET MAUI` workload installed).
+* Android SDK (API Level 26 or newer).
+
+### Installation
+1.  Clone the repository:
     ```bash
     git clone [https://github.com/FNKM625/RadioVolna.git](https://github.com/FNKM625/RadioVolna.git)
     ```
-2.  Otwórz plik `RadioVolna.sln` w Visual Studio.
-3.  Zbuduj rozwiązanie (`Build Solution`), aby pobrać niezbędne pakiety NuGet.
-4.  Podłącz telefon lub uruchom emulator i kliknij **F5**.
+2.  Open the `RadioVolna.sln` file in Visual Studio.
+3.  Build the solution to restore the necessary NuGet packages.
+4.  Connect your phone or start an emulator and press **F5**.
 
-*Wskazówka: Do budowania gotowych plików APK możesz wykorzystać dołączony skrypt `buildApp.bat`.*
-
----
-
-## 📝 Licencja i Prawa Autorskie
-Ten projekt został udostępniony publicznie głównie w celach **edukacyjnych** oraz jako element **portfolio**.
-
-**Wszelkie prawa zastrzeżone.**
-* Kopiowanie, redystrybucja oraz komercyjne wykorzystanie kodu źródłowego lub grafiki bez wyraźnej zgody autora jest zabronione.
-* Kod służy jako demonstracja umiejętności programistycznych w technologii .NET MAUI.
+*Tip: To build ready-to-use APK files, you can use the included `buildApp.bat` script.*
 
 ---
 
-**Autor:** [FNKM625](https://github.com/FNKM625)  
-**Status Projektu:** Rozwijany / Aktywny
+## 📝 License and Copyright
+This project is made publicly available primarily for **educational** purposes and as a **portfolio** piece.
+
+**All rights reserved.**
+* Copying, redistribution, and commercial use of the source code or graphics without explicit permission from the author are prohibited.
+* The code serves as a demonstration of programming skills in .NET MAUI technology.
+
+---
+
+**Author:** [FNKM625](https://github.com/FNKM625)  
+**Project Status:** In development / Active
