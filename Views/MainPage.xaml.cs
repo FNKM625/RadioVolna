@@ -561,7 +561,8 @@ public partial class MainPage : ContentPage
         try
         {
             string versionUrl =
-                "https://raw.githubusercontent.com/FNKM625/RadioVolna/refs/heads/dev/version.json?token=GHSAT0AAAAAADXKFN3T65ZCAK3XTXWOB4CU2PPWNDA";
+                "https://raw.githubusercontent.com/FNKM625/RadioVolna/dev/version.json";
+
             using var client = new HttpClient();
             var response = await client.GetAsync(versionUrl);
 
