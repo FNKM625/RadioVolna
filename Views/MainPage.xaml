@@ -228,5 +228,8 @@
                                         AddClicked="OnSearchResultAddClicked"
                                         CloseClicked="OnSearchResultsCloseClicked"/>
 
+        <views:UpdateView x:Name="UpdateWindow"
+                          Grid.RowSpan="3"
+                          IsVisible="False"/>
     </Grid>
 </ContentPage>

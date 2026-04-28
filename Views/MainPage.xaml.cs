@@ -1,6 +1,8 @@
 ﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Threading.Tasks;
+using CommunityToolkit.Maui.Alerts;
+using CommunityToolkit.Maui.Core;
 using RadioVolna.Resources;
 using RadioVolna.Services;
 
@@ -556,12 +558,13 @@ public partial class MainPage : ContentPage
         }
     }
 
-    private async Task CheckForUpdatesAsync()
+    public async Task CheckForUpdatesAsync(bool isManualCheck = false)
     {
         try
         {
             string versionUrl =
-                "https://raw.githubusercontent.com/FNKM625/RadioVolna/refs/heads/Convertor/version.json?token=GHSAT0AAAAAADXKFN3SKVXTNRWWFSUHGP6E2PPMWLQ";
+                "https://raw.githubusercontent.com/FNKM625/RadioVolna/dev/version.json";
+
             using var client = new HttpClient();
             var response = await client.GetAsync(versionUrl);
 
@@ -584,19 +587,24 @@ public partial class MainPage : ContentPage
 
                 if (latestBuild > currentBuild)
                 {
-                    string title = LocalizationResourceManager.Instance["UpdateTitle"];
-                    string btnYes = LocalizationResourceManager.Instance["UpdateYes"];
-                    string btnNo = LocalizationResourceManager.Instance["UpdateNo"];
+                    string ignoredBuild = Preferences.Default.Get(
+                        "IgnoredUpdateBuild",
+                        string.Empty
+                    );
 
-                    string messageTemplate = LocalizationResourceManager.Instance["UpdateMessage"];
-                    string message = string.Format(messageTemplate, latestVersion);
-
-                    bool answer = await DisplayAlert(title, message, btnYes, btnNo);
-
-                    if (answer)
+                    if (latestBuildStr != ignoredBuild || isManualCheck)
                     {
-                        await Launcher.OpenAsync(downloadUrl);
+                        await UpdateWindow.ShowUpdateAsync(
+                            latestVersion,
+                            latestBuildStr,
+                            downloadUrl
+                        );
                     }
+                }
+                else if (isManualCheck && latestBuild == currentBuild)
+                {
+                    string msg = LocalizationResourceManager.Instance["MsgUpToDate"];
+                    await Toast.Make(msg).Show();
                 }
             }
         }
@@ -612,6 +620,6 @@ public partial class MainPage : ContentPage
     {
         base.OnAppearing();
 
-        _ = CheckForUpdatesAsync();
+        _ = CheckForUpdatesAsync(false);
     }
 }

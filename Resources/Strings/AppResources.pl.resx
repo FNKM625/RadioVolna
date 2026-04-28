@@ -350,10 +350,19 @@
   <data name="UpdateMessage" xml:space="preserve">
     <value>Nowa wersja aplikacji ({0}) jest dostępna! Czy chcesz ją pobrać?</value>
   </data>
-  <data name="UpdateYes" xml:space="preserve">
-    <value>Tak</value>
+  <data name="BtnDownload" xml:space="preserve">
+    <value>Pobierz i zainstaluj</value>
   </data>
-  <data name="UpdateNo" xml:space="preserve">
-    <value>Nie</value>
+  <data name="BtnLater" xml:space="preserve">
+    <value>Później</value>
+  </data>
+  <data name="BtnSkipVersion" xml:space="preserve">
+    <value>Pomiń tę wersję</value>
+  </data>
+  <data name="BtnCheckForUpdates" xml:space="preserve">
+    <value>Sprawdź dostępność aktualizacji</value>
+  </data>
+  <data name="MsgUpToDate" xml:space="preserve">
+    <value>Brak dostępnych aktualizacji!</value>
   </data>
 </root>

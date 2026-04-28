@@ -295,6 +295,9 @@ public partial class AudioService
                 case ActionStop:
                     _service.Stop();
                     break;
+                case Android.Media.AudioManager.ActionAudioBecomingNoisy:
+                    _service.Pause();
+                    break;
             }
         }
     }

@@ -58,8 +58,8 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-android|AnyCPU'">
-    <ApplicationVersion>10</ApplicationVersion>
-    <ApplicationDisplayVersion>1.6.3</ApplicationDisplayVersion>
+    <ApplicationVersion>14</ApplicationVersion>
+    <ApplicationDisplayVersion>1.6.6</ApplicationDisplayVersion>
     <EmbedAssembliesIntoApk>True</EmbedAssembliesIntoApk>
   </PropertyGroup>
 
@@ -79,8 +79,8 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-android|AnyCPU'">
-    <ApplicationVersion>10</ApplicationVersion>
-    <ApplicationDisplayVersion>1.6.3</ApplicationDisplayVersion>
+    <ApplicationVersion>14</ApplicationVersion>
+    <ApplicationDisplayVersion>1.6.6</ApplicationDisplayVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-ios|AnyCPU'">
@@ -135,6 +135,7 @@
     <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
     <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="$(MauiVersion)" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0" />
+    <PackageReference Include="CommunityToolkit.Maui" Version="9.0.0" />
   </ItemGroup>
 
   <ItemGroup>

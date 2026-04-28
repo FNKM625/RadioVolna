@@ -1,7 +1,9 @@
 ﻿using System.Globalization;
+using System.Threading.Tasks;
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Controls;
 using RadioVolna.Resources;
+using RadioVolna.Views;
 #if ANDROID
 using Android.Content;
 using Android.OS;
@@ -163,4 +165,12 @@ public partial class SettingsView : ContentView
     }
 
     private void OnWindowContentTapped(object sender, EventArgs e) { }
+
+    private async void OnCheckForUpdatesClicked(object sender, EventArgs e)
+    {
+        if (Application.Current?.MainPage is MainPage mainPage)
+        {
+            await mainPage.CheckForUpdatesAsync(true);
+        }
+    }
 }
