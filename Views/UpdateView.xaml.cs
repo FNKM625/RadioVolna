@@ -4,8 +4,8 @@ namespace RadioVolna.Views;
 
 public partial class UpdateView : ContentView
 {
-    private string _downloadUrl;
-    private string _latestBuild;
+    private string? _downloadUrl;
+    private string? _latestBuild;
 
     public UpdateView()
     {

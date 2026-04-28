@@ -8,8 +8,6 @@ namespace RadioVolna;
 
 public partial class AudioService
 {
-    private bool _wasPlayingBeforeFocusLoss = false;
-
     // --- AUDIO FOCUS ---
     [SupportedOSPlatformGuard("android26.0")]
     private bool RequestAudioFocus()
@@ -129,12 +127,11 @@ public partial class AudioService
 
         var filter = new IntentFilter(AudioManager.ActionAudioBecomingNoisy);
 
-        // Rozwiązanie problemów z wersji Androida (fix dla image_a1abdf.png)
-        if (Build.VERSION.SdkInt >= BuildVersionCodes.Tiramisu) // Android 13+
+        if (IsAndroid33OrHigher())
         {
             _context.RegisterReceiver(_noisyReceiver, filter, ReceiverFlags.NotExported);
         }
-        else if (Build.VERSION.SdkInt >= BuildVersionCodes.O) // Android 8+
+        else if (IsAndroid26OrHigher())
         {
             _context.RegisterReceiver(_noisyReceiver, filter, (ReceiverFlags)0);
         }
