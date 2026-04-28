@@ -4,7 +4,6 @@ namespace RadioVolna.Views;
 
 public partial class AddStationMenuView : ContentView
 {
-    // BindableProperty pozwala na używanie IsOpen w bindowaniu XAML
     public static readonly BindableProperty IsOpenProperty = BindableProperty.Create(
         nameof(IsOpen),
         typeof(bool),
@@ -18,7 +17,6 @@ public partial class AddStationMenuView : ContentView
         set => SetValue(IsOpenProperty, value);
     }
 
-    // Zdarzenia, na które będziemy reagować w MainPage
     public event EventHandler? AddCustomClicked;
     public event EventHandler? SearchClicked;
 
@@ -29,19 +27,19 @@ public partial class AddStationMenuView : ContentView
 
     private void OnAddCustomClicked(object sender, EventArgs e)
     {
-        IsOpen = false; // Zamknij menu
+        IsOpen = false;
         AddCustomClicked?.Invoke(this, EventArgs.Empty);
     }
 
     private void OnSearchClicked(object sender, EventArgs e)
     {
-        IsOpen = false; // Zamknij menu
+        IsOpen = false;
         SearchClicked?.Invoke(this, EventArgs.Empty);
     }
 
     private void OnCancelClicked(object sender, EventArgs e)
     {
-        IsOpen = false; // Po prostu zamknij menu
+        IsOpen = false;
     }
 
     private void OnWindowContentTapped(object sender, EventArgs e) { }

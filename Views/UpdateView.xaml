@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="RadioVolna.Views.UpdateView"
+             xmlns:helpers="clr-namespace:RadioVolna.Resources"
+             x:Name="this">
+
+    <Grid BackgroundColor="#CC000000"
+          Padding="20">
+
+        <Grid.GestureRecognizers>
+            <TapGestureRecognizer Tapped="OnLaterClicked"/>
+        </Grid.GestureRecognizers>
+
+        <Border BackgroundColor="{AppThemeBinding Light={StaticResource TextDark}, Dark={StaticResource CardDark}}"
+                StrokeThickness="0"
+                VerticalOptions="Center"
+                HorizontalOptions="Center"
+                Padding="20">
+
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="20"/>
+            </Border.StrokeShape>
+
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnWindowContentTapped"/>
+            </Border.GestureRecognizers>
+
+            <VerticalStackLayout Margin="0"
+                                 Spacing="14">
+
+                <Label x:Name="TitleLabel"
+                       FontSize="22"
+                       FontAttributes="Bold"
+                       HorizontalOptions="Center"
+                       TextColor="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}"/>
+
+                <Label x:Name="MessageLabel"
+                       FontSize="14"
+                       HorizontalOptions="Center"
+                       TextColor="Gray"/>
+
+                <Button Text="{helpers:Translate BtnDownload}"
+                        Clicked="OnDownloadClicked"
+                        BackgroundColor="#C8DDC0"
+                        TextColor="#468847"
+                        FontAttributes="Bold"
+                        HeightRequest="55"/>
+
+                <Button Text="{helpers:Translate BtnLater}"
+                        Clicked="OnLaterClicked"
+                        BackgroundColor="#F0A5A5"
+                        TextColor="#750000"
+                        HeightRequest="50"/>
+
+                <Button Text="{helpers:Translate BtnSkipVersion}"
+                        Clicked="OnSkipClicked"
+                        BackgroundColor="#7D91F7"
+                        TextColor="#001775"
+                        FontSize="12"
+                        HeightRequest="50"/>
+            </VerticalStackLayout>
+        </Border>
+    </Grid>
+</ContentView>
